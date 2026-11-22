@@ -15,6 +15,13 @@ properties/2/path = NodePath(".:auto_enabled")
 properties/2/spawn = true
 properties/2/replication_mode = 1
 
+properties/3/path = NodePath(".:server_moving")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+properties/4/path = NodePath(".:attack_sequence")
+properties/4/spawn = true
+properties/4/replication_mode = 2
+
 [node name="NetworkPlayer" instance=ExtResource("1")]
 script = ExtResource("2")
 collision_layer = 2

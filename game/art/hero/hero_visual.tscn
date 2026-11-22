@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://game/art/hero/Knight.glb" id="1"]
+[ext_resource type="Script" path="res://game/art/hero/hero_visual.gd" id="2"]
+
+[node name="HeroVisual" instance=ExtResource("1")]
+script = ExtResource("2")
+
+[node name="1H_Sword_Offhand" parent="Rig/Skeleton3D/handslot_l" index="0"]
+visible = false
+
+[node name="Badge_Shield" parent="Rig/Skeleton3D/handslot_l" index="1"]
+visible = false
+
+[node name="Round_Shield" parent="Rig/Skeleton3D/handslot_l" index="3"]
+visible = false
+
+[node name="Spike_Shield" parent="Rig/Skeleton3D/handslot_l" index="4"]
+visible = false
+
+[node name="2H_Sword" parent="Rig/Skeleton3D/handslot_r" index="1"]
+visible = false

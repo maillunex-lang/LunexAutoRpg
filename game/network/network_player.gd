@@ -18,6 +18,9 @@ var desired_direction := Vector3.ZERO
 var input_time_left := 0.0
 var server_position := Vector3.ZERO
 var server_heading := 0.0
+var server_moving := false
+var attack_sequence := 0
+var _seen_attack := -1
 
 func prepare(id: int, spawn_position: Vector3, player_name: String) -> void:
 	peer_id = id
@@ -50,6 +53,7 @@ func _attack() -> void:
 	var facing := enemy.global_position - global_position
 	$Model.rotation.y = atan2(facing.x, facing.z)
 	attack_cooldown = attack_interval
+	attack_sequence += 1
 	enemy.take_hit(attack_damage, peer_id)
 	if enemy.health <= 0:
 		auto_enabled = false
@@ -87,8 +91,15 @@ func _physics_process(delta: float) -> void:
 		simulate(direction, delta)
 		server_position = position
 		server_heading = $Model.rotation.y
+		var motion := get_real_velocity()
+		server_moving = Vector2(motion.x, motion.z).length_squared() > 0.04
 		return
 
 	var weight := 1.0 - exp(-22.0 * delta)
 	position = position.lerp(server_position, weight)
 	$Model.rotation.y = lerp_angle($Model.rotation.y, server_heading, weight)
+	if _seen_attack != attack_sequence:
+		if _seen_attack >= 0:
+			hero_visual.show_attack()
+		_seen_attack = attack_sequence
+	hero_visual.show_motion(server_moving)

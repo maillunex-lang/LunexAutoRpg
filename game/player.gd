@@ -6,9 +6,12 @@ extends CharacterBody3D
 
 @export_range(0.0, 20.0, 0.1) var speed := 4.5
 
+@onready var hero_visual: LunexHeroVisual = $Model/HeroVisual
+
 func _physics_process(delta: float) -> void:
 	if joystick != null and camera != null:
 		simulate(camera_relative_direction(joystick.output, camera), delta)
+	hero_visual.show_motion(get_real_velocity().length_squared() > 0.04)
 
 func simulate(direction: Vector3, delta: float) -> void:
 	velocity.x = direction.x * speed
