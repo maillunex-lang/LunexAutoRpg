@@ -19,8 +19,15 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @onready var enemy: LunexTrainingEnemy = $TrainingEnemy
 @onready var combat: LunexCombatHUD = $HUD/CombatHUD
 
+@onready var diagnostics: LunexDiagnosticsHUD = $HUD/DiagnosticsHUD
 @onready var chat: LunexZoneChat = $HUD/ZoneChat
 @onready var progress_hud: LunexProgressHUD = $HUD/ProgressHUD
+
+var _metrics_enabled := false
+var _metrics_elapsed := 0.0
+var _physics_sample_count := 0
+var _physics_total_ms := 0.0
+var _physics_max_ms := 0.0
 
 var _store := LunexProgressStore.new()
 var _profiles: Dictionary[int, String] = {}
@@ -55,6 +62,7 @@ func _ready() -> void:
 	connect_timeout.timeout.connect(func() -> void: _close_client("Время подключения истекло."))
 
 func _start_server(args: PackedStringArray) -> void:
+	_metrics_enabled = "--metrics" in args
 	var port := DEFAULT_PORT
 	var database := DEFAULT_DATABASE
 	for arg in args:
@@ -104,6 +112,7 @@ func _connect_client(address: String, port: int, player_name: String) -> void:
 
 func _close_client(message: String) -> void:
 	connect_timeout.stop()
+	diagnostics.stop()
 	_local_player = null
 	camera.follow(null)
 	joystick.hide()
@@ -176,6 +185,7 @@ func _player_spawned(node: Node) -> void:
 	_local_player = player
 	_input_elapsed = INPUT_INTERVAL
 	camera.follow(player)
+	diagnostics.start(_peer.get_peer(1))
 	joystick.show()
 	chat.show()
 	progress_hud.show()
@@ -192,6 +202,8 @@ func _remove_player(id: int) -> void:
 		player.queue_free()
 
 func _physics_process(delta: float) -> void:
+	if _metrics_enabled:
+		_sample_server(delta)
 	if not is_instance_valid(_local_player):
 		return
 	combat.refresh(enemy, _local_player.auto_enabled)
@@ -315,3 +327,21 @@ func _send_chat(value: String) -> void:
 @rpc("authority", "call_remote", "reliable", 1)
 func _receive_chat(sender: String, message: String) -> void:
 	chat.append_message(sender, message)
+
+
+func _sample_server(delta: float) -> void:
+	var physics_ms := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
+	_metrics_elapsed += delta
+	_physics_sample_count += 1
+	_physics_total_ms += physics_ms
+	_physics_max_ms = maxf(_physics_max_ms, physics_ms)
+	if _metrics_elapsed < 5.0:
+		return
+	if not _profiles.is_empty():
+		print("LUNEX_METRICS players=%d physics_mean_ms=%.3f physics_max_ms=%.3f ticks=%d" % [
+			_profiles.size(), _physics_total_ms / _physics_sample_count, _physics_max_ms, _physics_sample_count,
+		])
+	_metrics_elapsed = 0.0
+	_physics_sample_count = 0
+	_physics_total_ms = 0.0
+	_physics_max_ms = 0.0

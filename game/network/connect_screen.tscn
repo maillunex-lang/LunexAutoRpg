@@ -49,7 +49,7 @@ text = "Адрес сервера"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
-text = "78.17.214.25"
+text = "78.17.214.93"
 max_length = 253
 
 [node name="PortLabel" type="Label" parent="Form/Panel/Margin/Fields"]
