@@ -4,6 +4,10 @@ const PLAYER_SCENE := preload("res://game/network/network_player.tscn")
 const DEFAULT_PORT := 28740
 const MAX_PLAYERS := 16
 const INPUT_INTERVAL := 0.05
+const PROFILE_PATH := "user://test_profile.cfg"
+const DEFAULT_DATABASE := "user://progress.sqlite"
+
+@export var quest_reward: LunexQuestReward
 
 @onready var players: Node3D = $Players
 @onready var spawner: MultiplayerSpawner = $PlayerSpawner
@@ -15,6 +19,12 @@ const INPUT_INTERVAL := 0.05
 @onready var enemy: LunexTrainingEnemy = $TrainingEnemy
 @onready var combat: LunexCombatHUD = $HUD/CombatHUD
 
+@onready var progress_hud: LunexProgressHUD = $HUD/ProgressHUD
+
+var _store := LunexProgressStore.new()
+var _profiles: Dictionary[int, String] = {}
+var _profile_token := ""
+var _progress: Dictionary = {}
 var _peer: ENetMultiplayerPeer
 var _player_name := ""
 var _local_player: LunexNetworkPlayer
@@ -31,22 +41,32 @@ func _ready() -> void:
 
 	combat.attack_requested.connect(func() -> void: _request_attack.rpc_id(1))
 	combat.auto_requested.connect(func(enabled: bool) -> void: _request_auto.rpc_id(1, enabled))
+	progress_hud.accept_requested.connect(func() -> void: _accept_quest.rpc_id(1))
+	progress_hud.equip_requested.connect(func() -> void: _equip_reward.rpc_id(1))
 	screen.connect_requested.connect(_connect_client)
 	screen.disconnect_requested.connect(func() -> void: _close_client("Вы вышли из мира."))
-	multiplayer.connected_to_server.connect(func() -> void: _join.rpc_id(1, _player_name))
+	multiplayer.connected_to_server.connect(func() -> void: _join.rpc_id(1, _player_name, _profile_token))
 	multiplayer.connection_failed.connect(func() -> void: _close_client("Сервер недоступен. Попробуйте снова."))
 	multiplayer.server_disconnected.connect(func() -> void: _close_client("Связь с сервером потеряна."))
 	connect_timeout.timeout.connect(func() -> void: _close_client("Время подключения истекло."))
 
 func _start_server(args: PackedStringArray) -> void:
 	var port := DEFAULT_PORT
+	var database := DEFAULT_DATABASE
 	for arg in args:
 		if arg.begins_with("--port="):
 			port = arg.trim_prefix("--port=").to_int()
+		elif arg.begins_with("--database="):
+			database = arg.trim_prefix("--database=")
 	if port < 1 or port > 65535:
 		push_error("Invalid server UDP port.")
 		get_tree().quit(1)
 		return
+	if not _store.open(database):
+		push_error("Could not open progression database.")
+		get_tree().quit(1)
+		return
+	enemy.defeated_by.connect(_complete_quest)
 	_peer = ENetMultiplayerPeer.new()
 	var result := _peer.create_server(port, MAX_PLAYERS)
 	if result != OK:
@@ -61,6 +81,9 @@ func _start_server(args: PackedStringArray) -> void:
 
 func _connect_client(address: String, port: int, player_name: String) -> void:
 	if _peer != null:
+		return
+	if not _open_local_profile():
+		screen.show_idle("Не удалось открыть локальный тестовый профиль.")
 		return
 	_player_name = player_name
 	var client := ENetMultiplayerPeer.new()
@@ -81,6 +104,9 @@ func _close_client(message: String) -> void:
 	joystick.hide()
 	combat.hide()
 	combat.selected = false
+	progress_hud.hide()
+	progress_hud.reset()
+	_progress.clear()
 	screen.show_idle(message)
 	if _peer != null:
 		var closing := _peer
@@ -92,7 +118,7 @@ func _close_client(message: String) -> void:
 		player.queue_free()
 
 @rpc("any_peer", "call_remote", "reliable")
-func _join(value: String) -> void:
+func _join(value: String, token: String) -> void:
 	if not multiplayer.is_server():
 		return
 	var id := multiplayer.get_remote_sender_id()
@@ -103,12 +129,30 @@ func _join(value: String) -> void:
 		_peer.disconnect_peer(id)
 		return
 
+	if token.length() != 64 or not token.is_valid_hex_number():
+		_reject_login.rpc_id(id, "Некорректный тестовый профиль.")
+		return
+	var profile := token.to_lower().sha256_text()
+	if _profiles.values().has(profile):
+		_reject_login.rpc_id(id, "Этот профиль уже в игре.")
+		return
+	var state := _store.load_profile(profile)
+	if state.is_empty():
+		_reject_login.rpc_id(id, "Сохранение временно недоступно.")
+		return
+
 	for slot in range(MAX_PLAYERS):
 		if _spawn_slots.values().has(slot):
 			continue
 		_spawn_slots[id] = slot
+		_profiles[id] = profile
 		var spawn := Vector3((slot % 4) * 2.0 - 3.0, 0.1, floori(slot / 4.0) * 2.0)
-		spawner.spawn([id, spawn, player_name])
+		if spawner.spawn([id, spawn, player_name]) == null:
+			_spawn_slots.erase(id)
+			_profiles.erase(id)
+			_reject_login.rpc_id(id, "Не удалось создать персонажа.")
+			return
+		_receive_progress.rpc_id(id, state)
 		break
 
 func _spawn_player(data: Variant) -> Node:
@@ -126,12 +170,14 @@ func _player_spawned(node: Node) -> void:
 	_input_elapsed = INPUT_INTERVAL
 	camera.follow(player)
 	joystick.show()
+	progress_hud.show()
 	combat.show()
 	connect_timeout.stop()
 	screen.show_connected()
 
 func _remove_player(id: int) -> void:
 	_spawn_slots.erase(id)
+	_profiles.erase(id)
 	var player := players.get_node_or_null(str(id))
 	if player != null:
 		player.queue_free()
@@ -172,3 +218,60 @@ func _request_auto(enabled: bool) -> void:
 	var player := _sender_player()
 	if player != null:
 		player.set_auto(enabled)
+
+
+func _open_local_profile() -> bool:
+	if not _profile_token.is_empty():
+		return true
+	var config := ConfigFile.new()
+	if FileAccess.file_exists(PROFILE_PATH):
+		if config.load(PROFILE_PATH) != OK:
+			return false
+		var saved: String = config.get_value("profile", "token", "")
+		if saved.length() != 64 or not saved.is_valid_hex_number():
+			return false
+		_profile_token = saved
+		return true
+	var generated := Crypto.new().generate_random_bytes(32).hex_encode()
+	if generated.length() != 64:
+		return false
+	config.set_value("profile", "token", generated)
+	if config.save(PROFILE_PATH) != OK:
+		return false
+	_profile_token = generated
+	return true
+
+@rpc("authority", "call_remote", "reliable")
+func _reject_login(message: String) -> void:
+	_close_client.call_deferred(message)
+
+@rpc("authority", "call_remote", "reliable")
+func _receive_progress(state: Dictionary) -> void:
+	_progress = state
+	progress_hud.show_state(state, quest_reward)
+
+func _publish_progress(peer_id: int, profile: String) -> void:
+	var state := _store.read_profile(profile)
+	if not state.is_empty():
+		_receive_progress.rpc_id(peer_id, state)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _accept_quest() -> void:
+	var player := _sender_player()
+	if player != null:
+		var profile: String = _profiles[player.peer_id]
+		if _store.accept(profile):
+			_publish_progress(player.peer_id, profile)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _equip_reward() -> void:
+	var player := _sender_player()
+	if player != null:
+		var profile: String = _profiles[player.peer_id]
+		if _store.equip(profile):
+			_publish_progress(player.peer_id, profile)
+
+func _complete_quest(peer_id: int) -> void:
+	var profile: String = _profiles.get(peer_id, "")
+	if not profile.is_empty() and _store.complete(profile, quest_reward):
+		_publish_progress(peer_id, profile)

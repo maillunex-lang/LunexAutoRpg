@@ -78,6 +78,7 @@ func _client(node_name: String) -> Node:
 	root.add_child(container)
 	var client := WORLD.instantiate()
 	container.add_child(client)
+	client._profile_token = Crypto.new().generate_random_bytes(32).hex_encode()
 	return client
 
 func _join(client: Node, address: String, port: int, player_name: String) -> void:

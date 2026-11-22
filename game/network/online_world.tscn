@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -10,8 +10,12 @@
 [ext_resource type="PackedScene" path="res://game/combat/combat_hud.tscn" id="7"]
 [ext_resource type="NavigationMesh" path="res://game/combat/training_navigation.tres" id="8"]
 
+[ext_resource type="PackedScene" path="res://game/progression/progress_hud.tscn" id="9"]
+[ext_resource type="Resource" path="res://game/progression/training_reward.tres" id="10"]
+
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
+quest_reward = ExtResource("10")
 
 [node name="Navigation" type="NavigationRegion3D" parent="."]
 navigation_mesh = ExtResource("8")
@@ -41,6 +45,9 @@ visible = false
 [node name="ConnectScreen" parent="HUD" instance=ExtResource("5")]
 
 [node name="CombatHUD" parent="HUD" instance=ExtResource("7")]
+visible = false
+
+[node name="ProgressHUD" parent="HUD" instance=ExtResource("9")]
 visible = false
 
 [node name="ConnectTimeout" type="Timer" parent="."]

@@ -48,7 +48,7 @@ func _attack() -> void:
 	var facing := enemy.global_position - global_position
 	$Model.rotation.y = atan2(facing.x, facing.z)
 	attack_cooldown = attack_interval
-	enemy.take_hit(attack_damage)
+	enemy.take_hit(attack_damage, peer_id)
 	if enemy.health <= 0:
 		auto_enabled = false
 
