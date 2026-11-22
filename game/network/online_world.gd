@@ -12,6 +12,9 @@ const INPUT_INTERVAL := 0.05
 @onready var screen: LunexConnectScreen = $HUD/ConnectScreen
 @onready var connect_timeout: Timer = $ConnectTimeout
 
+@onready var enemy: LunexTrainingEnemy = $TrainingEnemy
+@onready var combat: LunexCombatHUD = $HUD/CombatHUD
+
 var _peer: ENetMultiplayerPeer
 var _player_name := ""
 var _local_player: LunexNetworkPlayer
@@ -26,6 +29,8 @@ func _ready() -> void:
 		_start_server(args)
 		return
 
+	combat.attack_requested.connect(func() -> void: _request_attack.rpc_id(1))
+	combat.auto_requested.connect(func(enabled: bool) -> void: _request_auto.rpc_id(1, enabled))
 	screen.connect_requested.connect(_connect_client)
 	screen.disconnect_requested.connect(func() -> void: _close_client("Вы вышли из мира."))
 	multiplayer.connected_to_server.connect(func() -> void: _join.rpc_id(1, _player_name))
@@ -74,6 +79,8 @@ func _close_client(message: String) -> void:
 	_local_player = null
 	camera.follow(null)
 	joystick.hide()
+	combat.hide()
+	combat.selected = false
 	screen.show_idle(message)
 	if _peer != null:
 		var closing := _peer
@@ -108,6 +115,7 @@ func _spawn_player(data: Variant) -> Node:
 	var player := PLAYER_SCENE.instantiate() as LunexNetworkPlayer
 	player.name = str(data[0])
 	player.prepare(data[0], data[1], data[2])
+	player.enemy = enemy
 	return player
 
 func _player_spawned(node: Node) -> void:
@@ -118,6 +126,7 @@ func _player_spawned(node: Node) -> void:
 	_input_elapsed = INPUT_INTERVAL
 	camera.follow(player)
 	joystick.show()
+	combat.show()
 	connect_timeout.stop()
 	screen.show_connected()
 
@@ -130,6 +139,7 @@ func _remove_player(id: int) -> void:
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(_local_player):
 		return
+	combat.refresh(enemy, _local_player.auto_enabled)
 	_input_elapsed += delta
 	if _input_elapsed < INPUT_INTERVAL:
 		return
@@ -141,6 +151,24 @@ func _physics_process(delta: float) -> void:
 func _move(direction: Vector2) -> void:
 	if not multiplayer.is_server() or not direction.is_finite():
 		return
-	var player := players.get_node_or_null(str(multiplayer.get_remote_sender_id())) as LunexNetworkPlayer
+	var player := _sender_player()
 	if player != null:
 		player.accept_input(Vector3(direction.x, 0.0, direction.y))
+
+
+func _sender_player() -> LunexNetworkPlayer:
+	if not multiplayer.is_server():
+		return null
+	return players.get_node_or_null(str(multiplayer.get_remote_sender_id())) as LunexNetworkPlayer
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_attack() -> void:
+	var player := _sender_player()
+	if player != null:
+		player.attack_requested = true
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_auto(enabled: bool) -> void:
+	var player := _sender_player()
+	if player != null:
+		player.set_auto(enabled)
