@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://game/combat/training_enemy.tscn" id="1"]
+
+[node name="GateWatch" instance=ExtResource("1")]
+target_id = "gate_watch"
+target_name = "Скелет-дозорный"
+max_health = 90
+respawn_delay = 6.0
+
+[node name="EnemyVisual" parent="." index="0"]
+scale = Vector3(0.98, 0.98, 0.98)
+
+[node name="Name" parent="." index="1"]
+position = Vector3(0, 2.55, 0)

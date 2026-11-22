@@ -7,7 +7,8 @@ const INPUT_INTERVAL := 0.05
 const PROFILE_PATH := "user://test_profile.cfg"
 const DEFAULT_DATABASE := "user://progress.sqlite"
 
-@export var quest_reward: LunexQuestReward
+@export var quest_rewards: Array[LunexQuestReward]
+@export_range(1, 100000) var level_two_experience := 50
 
 @onready var players: Node3D = $Players
 @onready var spawner: MultiplayerSpawner = $PlayerSpawner
@@ -17,6 +18,8 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @onready var connect_timeout: Timer = $ConnectTimeout
 
 @onready var enemy: LunexTrainingEnemy = $TrainingEnemy
+@onready var watch: LunexTrainingEnemy = $GateWatch
+@onready var targets: Array[LunexTrainingEnemy] = [enemy, watch]
 @onready var combat: LunexCombatHUD = $HUD/CombatHUD
 
 @onready var diagnostics: LunexDiagnosticsHUD = $HUD/DiagnosticsHUD
@@ -31,7 +34,7 @@ var _physics_max_ms := 0.0
 
 var _store := LunexProgressStore.new()
 var _profiles: Dictionary[int, String] = {}
-var _contributors: Dictionary[String, bool] = {}
+var _contributors: Dictionary[String, Dictionary] = {}
 var _chat_next_ms: Dictionary[int, int] = {}
 var _profile_token := ""
 var _progress: Dictionary = {}
@@ -42,6 +45,7 @@ var _input_elapsed := 0.0
 var _spawn_slots: Dictionary[int, int] = {}
 
 func _ready() -> void:
+	combat.targets = targets
 	spawner.spawn_function = _spawn_player
 	spawner.spawned.connect(_player_spawned)
 	var args := OS.get_cmdline_user_args()
@@ -49,10 +53,10 @@ func _ready() -> void:
 		_start_server(args)
 		return
 
-	combat.attack_requested.connect(func() -> void: _request_attack.rpc_id(1))
-	combat.auto_requested.connect(func(enabled: bool) -> void: _request_auto.rpc_id(1, enabled))
-	progress_hud.accept_requested.connect(func() -> void: _accept_quest.rpc_id(1))
-	progress_hud.equip_requested.connect(func() -> void: _equip_reward.rpc_id(1))
+	combat.attack_requested.connect(func() -> void: _request_attack.rpc_id(1, combat.target_index))
+	combat.auto_requested.connect(func(enabled: bool) -> void: _request_auto.rpc_id(1, enabled, combat.target_index))
+	progress_hud.accept_requested.connect(func() -> void: _accept_quest.rpc_id(1, progress_hud.selected_quest))
+	progress_hud.equip_requested.connect(func() -> void: _equip_reward.rpc_id(1, progress_hud.selected_quest))
 	chat.message_requested.connect(func(message: String) -> void: _send_chat.rpc_id(1, message))
 	screen.connect_requested.connect(_connect_client)
 	screen.disconnect_requested.connect(func() -> void: _close_client("Вы вышли из мира."))
@@ -78,8 +82,9 @@ func _start_server(args: PackedStringArray) -> void:
 		push_error("Could not open progression database.")
 		get_tree().quit(1)
 		return
-	enemy.hit_landed.connect(_record_hit)
-	enemy.defeated.connect(_reward_contributors)
+	for target in targets:
+		target.hit_landed.connect(_record_hit.bind(target.target_id))
+		target.defeated.connect(_reward_contributors.bind(target.target_id))
 	_peer = ENetMultiplayerPeer.new()
 	var result := _peer.create_server(port, MAX_PLAYERS, 2)
 	if result != OK:
@@ -118,6 +123,7 @@ func _close_client(message: String) -> void:
 	joystick.hide()
 	combat.hide()
 	combat.selected = false
+	combat.target_index = 0
 	chat.hide()
 	chat.reset()
 	progress_hud.hide()
@@ -206,7 +212,7 @@ func _physics_process(delta: float) -> void:
 		_sample_server(delta)
 	if not is_instance_valid(_local_player):
 		return
-	combat.refresh(enemy, _local_player.auto_enabled)
+	combat.refresh(_local_player.auto_enabled)
 	_input_elapsed += delta
 	if _input_elapsed < INPUT_INTERVAL:
 		return
@@ -229,15 +235,17 @@ func _sender_player() -> LunexNetworkPlayer:
 	return players.get_node_or_null(str(multiplayer.get_remote_sender_id())) as LunexNetworkPlayer
 
 @rpc("any_peer", "call_remote", "reliable")
-func _request_attack() -> void:
+func _request_attack(index: int) -> void:
 	var player := _sender_player()
-	if player != null:
+	if player != null and index >= 0 and index < targets.size():
+		player.set_target(targets[index])
 		player.attack_requested = true
 
 @rpc("any_peer", "call_remote", "reliable")
-func _request_auto(enabled: bool) -> void:
+func _request_auto(enabled: bool, index: int) -> void:
 	var player := _sender_player()
-	if player != null:
+	if player != null and index >= 0 and index < targets.size():
+		player.set_target(targets[index])
 		player.set_auto(enabled)
 
 
@@ -269,7 +277,7 @@ func _reject_login(message: String) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _receive_progress(state: Dictionary) -> void:
 	_progress = state
-	progress_hud.show_state(state, quest_reward)
+	progress_hud.show_state(state, quest_rewards, level_two_experience)
 
 func _publish_progress(peer_id: int, profile: String) -> void:
 	var state := _store.read_profile(profile)
@@ -277,37 +285,43 @@ func _publish_progress(peer_id: int, profile: String) -> void:
 		_receive_progress.rpc_id(peer_id, state)
 
 @rpc("any_peer", "call_remote", "reliable")
-func _accept_quest() -> void:
+func _accept_quest(index: int) -> void:
 	var player := _sender_player()
-	if player != null:
+	if player != null and index >= 0 and index < quest_rewards.size():
 		var profile: String = _profiles[player.peer_id]
-		if _store.accept(profile):
+		if _store.accept(profile, quest_rewards[index]):
 			_publish_progress(player.peer_id, profile)
 
 @rpc("any_peer", "call_remote", "reliable")
-func _equip_reward() -> void:
+func _equip_reward(index: int) -> void:
 	var player := _sender_player()
-	if player != null:
+	if player != null and index >= 0 and index < quest_rewards.size():
 		var profile: String = _profiles[player.peer_id]
-		if _store.equip(profile):
+		if _store.equip(profile, quest_rewards[index].quest_id):
 			_publish_progress(player.peer_id, profile)
 
-func _record_hit(peer_id: int) -> void:
+func _record_hit(peer_id: int, target_id: String) -> void:
 	var profile: String = _profiles.get(peer_id, "")
-	if profile.is_empty() or _contributors.has(profile):
+	if profile.is_empty():
 		return
-	var state := _store.read_profile(profile)
-	if state.get("quest") == LunexProgressStore.Quest.ACTIVE:
-		_contributors[profile] = true
+	for reward in quest_rewards:
+		if reward.target_id != target_id:
+			continue
+		var earned: Dictionary = _contributors.get_or_add(reward.quest_id, {})
+		if not earned.has(profile) and _store.is_active(profile, reward.quest_id):
+			earned[profile] = true
 
-func _reward_contributors() -> void:
-	var eligible := _contributors.keys()
-	_contributors.clear()
-	for profile in eligible:
-		if _store.complete(profile, quest_reward):
-			var online_peer: Variant = _profiles.find_key(profile)
-			if online_peer != null:
-				_publish_progress(online_peer, profile)
+func _reward_contributors(target_id: String) -> void:
+	for reward in quest_rewards:
+		if reward.target_id != target_id:
+			continue
+		var earned: Dictionary = _contributors.get(reward.quest_id, {})
+		_contributors.erase(reward.quest_id)
+		for profile: String in earned:
+			if _store.complete(profile, reward):
+				var online_peer: Variant = _profiles.find_key(profile)
+				if online_peer != null:
+					_publish_progress(online_peer, profile)
 
 @rpc("any_peer", "call_remote", "reliable", 1)
 func _send_chat(value: String) -> void:

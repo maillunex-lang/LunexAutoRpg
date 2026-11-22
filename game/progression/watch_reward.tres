@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="LunexQuestReward" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/progression/quest_reward.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = "gate_watch"
+prerequisite_id = "training"
+target_id = "gate_watch"
+objective = "Победите скелета-дозорного"
+slot_name = "Медальон"
+quest_title = "Дозор у ворот"
+item_id = "watch_medallion"
+item_name = "Медальон дозорного"
+experience = 25

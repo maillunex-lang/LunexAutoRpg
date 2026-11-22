@@ -58,7 +58,7 @@ func _run() -> void:
 	for client in [first, second]:
 		client.progress_hud.accept_requested.emit()
 	if not await _expect("both profiles accept the quest", func() -> bool:
-		return first._progress.get("quest") == 1 and second._progress.get("quest") == 1
+		return _training(first).get("quest") == 1 and _training(second).get("quest") == 1
 	):
 		return
 	if not await _hit(first, 40):
@@ -91,7 +91,7 @@ func _run() -> void:
 	quit()
 
 func _equipped(client: Node) -> bool:
-	return _awarded(client) and client._progress.equipped == client._progress.item
+	return _awarded(client) and _training(client).equipped == _training(client).item
 
 func _metrics_visible(client: Node) -> bool:
 	var value: String = client.diagnostics.values.text

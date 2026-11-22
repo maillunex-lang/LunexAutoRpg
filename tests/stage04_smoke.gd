@@ -24,19 +24,19 @@ func _run() -> void:
 	var observer := _client("Observer")
 	_join(observer, address, port, "Observer")
 	if not await _expect("both profiles start with an available quest", func() -> bool:
-		return fighter._progress.get("quest", -1) == 0 and observer._progress.get("quest", -1) == 0
+		return _training(fighter).get("quest", -1) == 0 and _training(observer).get("quest", -1) == 0
 	):
 		return
 	fighter.progress_hud.equip_requested.emit()
 	fighter.progress_hud.accept_requested.emit()
 	if not await _expect("accepting quest changes only the requesting profile", func() -> bool:
-		return fighter._progress.get("quest", -1) == 1 and fighter._progress.equipped == "" and observer._progress.quest == 0
+		return _training(fighter).get("quest", -1) == 1 and _training(fighter).equipped == "" and _training(observer).quest == 0
 	):
 		return
 	fighter.combat.selected = true
 	fighter.combat.auto_requested.emit(true)
 	if not await _expect("victory grants one item and experience", func() -> bool:
-		return fighter._progress.get("quest", -1) == 2 and fighter._progress.experience == 25 and fighter._progress.item == "training_ring"
+		return _training(fighter).get("quest", -1) == 2 and _training(fighter).experience == 25 and _training(fighter).item == "training_ring"
 	):
 		return
 	fighter.progress_hud.equip_requested.emit()
@@ -53,7 +53,7 @@ func _run() -> void:
 		return
 	_join(fighter, address, port, "Renamed")
 	if not await _expect("reconnect preserves a single award and slot; observer received nothing", func() -> bool:
-		return _equipped(fighter) and observer._progress.quest == 0 and observer._progress.experience == 0 and observer._progress.item == ""
+		return _equipped(fighter) and _training(observer).quest == 0 and _training(observer).experience == 0 and _training(observer).item == ""
 	):
 		return
 	fighter.screen.disconnect_requested.emit()
@@ -61,5 +61,5 @@ func _run() -> void:
 	quit()
 
 func _equipped(client: Node) -> bool:
-	var state: Dictionary = client._progress
+	var state: Dictionary = _training(client)
 	return state.get("quest", -1) == 2 and state.experience == 25 and state.item == "training_ring" and state.equipped == state.item

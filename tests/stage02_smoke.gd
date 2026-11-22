@@ -96,3 +96,17 @@ func _expect(description: String, condition: Callable) -> bool:
 	push_error("FAIL: " + description)
 	quit(1)
 	return false
+
+
+func _training(client: Node) -> Dictionary:
+	var state: Dictionary = client._progress
+	if state.is_empty():
+		return {}
+	var quests: Dictionary = state.quests
+	var training: Dictionary = quests.get("training", {})
+	return {
+		"quest": training.get("quest", 0),
+		"item": training.get("item", ""),
+		"equipped": training.get("equipped", ""),
+		"experience": state.experience,
+	}

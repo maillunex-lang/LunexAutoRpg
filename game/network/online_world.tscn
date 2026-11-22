@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -17,9 +17,13 @@
 
 [ext_resource type="PackedScene" path="res://game/diagnostics/diagnostics_hud.tscn" id="12"]
 
+[ext_resource type="Script" path="res://game/progression/quest_reward.gd" id="13"]
+[ext_resource type="Resource" path="res://game/progression/watch_reward.tres" id="14"]
+[ext_resource type="PackedScene" path="res://game/combat/gate_watch.tscn" id="15"]
+
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
-quest_reward = ExtResource("10")
+quest_rewards = Array[ExtResource("13")]([ExtResource("10"), ExtResource("14")])
 
 [node name="Navigation" type="NavigationRegion3D" parent="."]
 navigation_mesh = ExtResource("8")
@@ -28,6 +32,9 @@ navigation_mesh = ExtResource("8")
 
 [node name="TrainingEnemy" parent="." instance=ExtResource("6")]
 position = Vector3(0, 0, -5.6)
+
+[node name="GateWatch" parent="." instance=ExtResource("15")]
+position = Vector3(7, 0, -5.1)
 
 [node name="Players" type="Node3D" parent="."]
 

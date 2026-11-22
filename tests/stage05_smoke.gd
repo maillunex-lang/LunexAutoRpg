@@ -16,7 +16,7 @@ func _run() -> void:
 		_join(client, args[0], args[1].to_int(), client.get_parent().name)
 	if not await _expect("four distinct profiles joined the zone", func() -> bool:
 		return clients.all(func(client: Node) -> bool:
-			return client.players.get_child_count() == 4 and client._progress.get("quest") == 0)
+			return client.players.get_child_count() == 4 and _training(client).get("quest") == 0)
 	):
 		return
 
@@ -38,7 +38,7 @@ func _run() -> void:
 	for client: Node in [first, second, spectator]:
 		client.progress_hud.accept_requested.emit()
 	if not await _expect("three profiles accept the quest; guest remains unassigned", func() -> bool:
-		return first._progress.get("quest") == 1 and second._progress.get("quest") == 1 and spectator._progress.get("quest") == 1 and guest._progress.get("quest") == 0
+		return _training(first).get("quest") == 1 and _training(second).get("quest") == 1 and _training(spectator).get("quest") == 1 and _training(guest).get("quest") == 0
 	):
 		return
 
@@ -49,7 +49,7 @@ func _run() -> void:
 	if not await _hit(guest, 0):
 		return
 	if not await _expect("both contributors earn a reward; spectator and last hitter are ineligible", func() -> bool:
-		return _awarded(first) and _awarded(second) and spectator._progress.get("experience") == 0 and guest._progress.get("experience") == 0
+		return _awarded(first) and _awarded(second) and _training(spectator).get("experience") == 0 and _training(guest).get("experience") == 0
 	):
 		return
 
@@ -68,7 +68,7 @@ func _run() -> void:
 		return
 	_join(first, args[0], args[1].to_int(), "First")
 	if not await _expect("reconnect keeps one award per profile and starts a fresh chat", func() -> bool:
-		return _awarded(first) and _awarded(second) and first.chat.messages.is_empty() and spectator._progress.experience == 0 and guest._progress.experience == 0
+		return _awarded(first) and _awarded(second) and first.chat.messages.is_empty() and _training(spectator).experience == 0 and _training(guest).experience == 0
 	):
 		return
 
@@ -99,5 +99,5 @@ func _return_to_spawn(client: Node, observer: Node, args: PackedStringArray) -> 
 	)
 
 func _awarded(client: Node) -> bool:
-	var state: Dictionary = client._progress
+	var state: Dictionary = _training(client)
 	return state.get("quest", -1) == 2 and state.experience == 25 and state.item == "training_ring"

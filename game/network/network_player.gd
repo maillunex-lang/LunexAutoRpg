@@ -35,6 +35,12 @@ func accept_input(direction: Vector3) -> void:
 	if desired_direction.length_squared() > 0.001:
 		auto_enabled = false
 
+func set_target(target: LunexTrainingEnemy) -> void:
+	if enemy != target:
+		enemy = target
+		auto_enabled = false
+		attack_requested = false
+
 func set_auto(enabled: bool) -> void:
 	if enabled and not auto_enabled and enemy.health > 0:
 		navigation.target_position = enemy.global_position
