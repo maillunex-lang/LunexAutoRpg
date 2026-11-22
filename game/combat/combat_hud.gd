@@ -13,12 +13,17 @@ func _ready() -> void:
 	%Attack.pressed.connect(func() -> void: attack_requested.emit())
 	%Auto.toggled.connect(func(enabled: bool) -> void: auto_requested.emit(enabled))
 
-func refresh(auto_active: bool) -> void:
+func refresh(player: LunexNetworkPlayer) -> void:
+	var auto_active := player.auto_enabled
+	var alive := player.health > 0
+	%HeroHealth.max_value = player.max_health
+	%HeroHealth.value = player.health
+	%HeroStatus.text = "Герой: %d / %d ОЗ" % [player.health, player.max_health] if alive else "Возрождение: %d с" % ceili(player.revival_left)
 	var target := targets[target_index]
 	%Target.text = target.target_name if selected else "Выбрать цель"
 	%Health.text = ("%d / %d ОЗ" % [target.health, target.max_health]) if target.health > 0 else "Цель повержена"
-	%Attack.disabled = not selected or target.health <= 0
-	%Auto.disabled = (not selected or target.health <= 0) and not auto_active
+	%Attack.disabled = not alive or not selected or target.health <= 0
+	%Auto.disabled = (not alive or not selected or target.health <= 0) and not auto_active
 	%Auto.set_pressed_no_signal(auto_active)
 	%Auto.text = "Стоп" if auto_active else "Авто"
 

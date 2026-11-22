@@ -1,8 +1,31 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="PackedScene" path="res://game/combat/training_enemy.tscn" id="1"]
 
+[ext_resource type="Script" path="res://game/combat/gate_watch.gd" id="2"]
+
+[sub_resource type="StandardMaterial3D" id="WarningMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.17, 0.08, 0.47)
+
+[sub_resource type="CylinderMesh" id="WarningDisc"]
+material = SubResource("WarningMaterial")
+top_radius = 1.0
+bottom_radius = 1.0
+height = 0.004
+radial_segments = 48
+
+[sub_resource type="SceneReplicationConfig" id="WatchReplication"]
+properties/0/path = NodePath(".:health")
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:telegraph_active")
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:counter_sequence")
+properties/2/replication_mode = 2
+
 [node name="GateWatch" instance=ExtResource("1")]
+script = ExtResource("2")
 target_id = "gate_watch"
 target_name = "Скелет-дозорный"
 max_health = 90
@@ -13,3 +36,13 @@ scale = Vector3(0.98, 0.98, 0.98)
 
 [node name="Name" parent="." index="1"]
 position = Vector3(0, 2.55, 0)
+
+
+[node name="State" parent="." index="3"]
+replication_config = SubResource("WatchReplication")
+
+[node name="CounterWarning" type="MeshInstance3D" parent="." index="4"]
+visible = false
+position = Vector3(0, 0.014, 0)
+cast_shadow = 0
+mesh = SubResource("WarningDisc")

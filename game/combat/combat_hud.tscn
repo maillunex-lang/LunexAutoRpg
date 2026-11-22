@@ -17,11 +17,26 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -228.0
-offset_top = -204.0
+offset_top = -262.0
 offset_right = -48.0
 offset_bottom = -34.0
 mouse_filter = 2
 theme_override_constants/separation = 6
+
+[node name="HeroStatus" type="Label" parent="Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_y = 2
+text = "Герой: 100 / 100 ОЗ"
+
+[node name="HeroHealth" type="ProgressBar" parent="Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 14)
+value = 100.0
+show_percentage = false
 
 [node name="Health" type="Label" parent="Actions"]
 unique_name_in_owner = true

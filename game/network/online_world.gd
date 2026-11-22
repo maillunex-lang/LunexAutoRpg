@@ -18,7 +18,7 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @onready var connect_timeout: Timer = $ConnectTimeout
 
 @onready var enemy: LunexTrainingEnemy = $TrainingEnemy
-@onready var watch: LunexTrainingEnemy = $GateWatch
+@onready var watch: LunexGateWatch = $GateWatch
 @onready var targets: Array[LunexTrainingEnemy] = [enemy, watch]
 @onready var combat: LunexCombatHUD = $HUD/CombatHUD
 
@@ -82,6 +82,7 @@ func _start_server(args: PackedStringArray) -> void:
 		push_error("Could not open progression database.")
 		get_tree().quit(1)
 		return
+	watch.players = players
 	for target in targets:
 		target.hit_landed.connect(_record_hit.bind(target.target_id))
 		target.defeated.connect(_reward_contributors.bind(target.target_id))
@@ -212,7 +213,7 @@ func _physics_process(delta: float) -> void:
 		_sample_server(delta)
 	if not is_instance_valid(_local_player):
 		return
-	combat.refresh(_local_player.auto_enabled)
+	combat.refresh(_local_player)
 	_input_elapsed += delta
 	if _input_elapsed < INPUT_INTERVAL:
 		return
@@ -237,7 +238,7 @@ func _sender_player() -> LunexNetworkPlayer:
 @rpc("any_peer", "call_remote", "reliable")
 func _request_attack(index: int) -> void:
 	var player := _sender_player()
-	if player != null and index >= 0 and index < targets.size():
+	if player != null and player.health > 0 and index >= 0 and index < targets.size():
 		player.set_target(targets[index])
 		player.attack_requested = true
 

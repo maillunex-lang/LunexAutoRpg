@@ -5,11 +5,14 @@ extends Node3D
 @export var run_clip: StringName = &"Running_A"
 @export var attack_clip: StringName = &"1H_Melee_Attack_Slice_Diagonal"
 
+@export var defeat_clip: StringName = &"Death_A"
+
 @onready var clips: AnimationPlayer = $AnimationPlayer
 
 func _ready() -> void:
 	clips.get_animation(idle_clip).loop_mode = Animation.LOOP_LINEAR
 	clips.get_animation(run_clip).loop_mode = Animation.LOOP_LINEAR
+	clips.get_animation(defeat_clip).loop_mode = Animation.LOOP_NONE
 
 func show_motion(moving: bool) -> void:
 	if clips.is_playing() and clips.current_animation == attack_clip:
@@ -21,3 +24,7 @@ func show_motion(moving: bool) -> void:
 func show_attack() -> void:
 	clips.stop()
 	clips.play(attack_clip, 0.04)
+
+
+func show_defeat() -> void:
+	clips.play(defeat_clip, 0.08)

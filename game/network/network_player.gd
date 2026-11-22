@@ -5,7 +5,16 @@ extends LunexPlayer
 @export_range(1, 1000) var attack_damage := 20
 @export_range(0.1, 5.0, 0.05) var attack_interval := 0.8
 
+@export_range(1, 1000) var max_health := 100
+@export_range(0.5, 20.0, 0.1) var revival_delay := 4.0
+
 @onready var navigation: NavigationAgent3D = $NavigationAgent3D
+
+var health := 100
+var revival_left := 0.0
+var _spawn_position := Vector3.ZERO
+var _was_alive := true
+var _standing_collision_layer: int
 
 var enemy: LunexTrainingEnemy
 var auto_enabled := false
@@ -25,11 +34,15 @@ var _seen_attack := -1
 func prepare(id: int, spawn_position: Vector3, player_name: String) -> void:
 	peer_id = id
 	position = spawn_position
+	_spawn_position = spawn_position
+	health = max_health
 	server_position = spawn_position
 	display_name = player_name
 	$PlayerName.text = display_name
 
 func accept_input(direction: Vector3) -> void:
+	if health <= 0:
+		return
 	desired_direction = direction.limit_length()
 	input_time_left = 0.4
 	if desired_direction.length_squared() > 0.001:
@@ -42,12 +55,13 @@ func set_target(target: LunexTrainingEnemy) -> void:
 		attack_requested = false
 
 func set_auto(enabled: bool) -> void:
+	enabled = enabled and health > 0
 	if enabled and not auto_enabled and enemy.health > 0:
 		navigation.target_position = enemy.global_position
 	auto_enabled = enabled and enemy.health > 0
 
 func _can_attack() -> bool:
-	if enemy.health <= 0 or global_position.distance_squared_to(enemy.global_position) > attack_range * attack_range:
+	if health <= 0 or enemy.health <= 0 or global_position.distance_squared_to(enemy.global_position) > attack_range * attack_range:
 		return false
 	var height := Vector3.UP * 0.5
 	var sight := PhysicsRayQueryParameters3D.create(global_position + height, enemy.global_position + height, 1)
@@ -78,13 +92,41 @@ func _auto_direction() -> Vector3:
 	step.y = 0.0
 	return step.normalized()
 
+func take_counter_damage(damage: int) -> void:
+	if health <= 0:
+		return
+	health = maxi(0, health - damage)
+	if health == 0:
+		revival_left = revival_delay
+		auto_enabled = false
+		attack_requested = false
+		server_moving = false
+		desired_direction = Vector3.ZERO
+		input_time_left = 0.0
+		velocity = Vector3.ZERO
+		collision_layer = 0
+
+func _revive() -> void:
+	position = _spawn_position
+	server_position = position
+	collision_layer = _standing_collision_layer
+	attack_requested = false
+	attack_cooldown = 0.0
+	health = max_health
+
 func _ready() -> void:
+	_standing_collision_layer = collision_layer
 	if not multiplayer.is_server():
 		collision_layer = 0
 		collision_mask = 0
 
 func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
+		if health <= 0:
+			revival_left = maxf(0.0, revival_left - delta)
+			if revival_left <= 0.0:
+				_revive()
+			return
 		input_time_left = maxf(input_time_left - delta, 0.0)
 		var direction := desired_direction if input_time_left > 0.0 else Vector3.ZERO
 		attack_cooldown = maxf(attack_cooldown - delta, 0.0)
@@ -101,11 +143,20 @@ func _physics_process(delta: float) -> void:
 		server_moving = Vector2(motion.x, motion.z).length_squared() > 0.04
 		return
 
+	var alive := health > 0
+	if alive != _was_alive:
+		_was_alive = alive
+		if alive:
+			position = _spawn_position
+			hero_visual.show_motion(false)
+		else:
+			hero_visual.show_defeat()
 	var weight := 1.0 - exp(-22.0 * delta)
 	position = position.lerp(server_position, weight)
 	$Model.rotation.y = lerp_angle($Model.rotation.y, server_heading, weight)
 	if _seen_attack != attack_sequence:
-		if _seen_attack >= 0:
+		if _seen_attack >= 0 and alive:
 			hero_visual.show_attack()
 		_seen_attack = attack_sequence
-	hero_visual.show_motion(server_moving)
+	if alive:
+		hero_visual.show_motion(server_moving)
