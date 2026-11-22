@@ -42,9 +42,9 @@ func _run() -> void:
 	):
 		return
 
-	if not await _hit(first, 40) or not await _make_room(first):
+	if not await _hit(first, 40) or not await _return_to_spawn(first, spectator, args):
 		return
-	if not await _hit(second, 20) or not await _make_room(second):
+	if not await _hit(second, 20) or not await _return_to_spawn(second, spectator, args):
 		return
 	if not await _hit(guest, 0):
 		return
@@ -53,7 +53,7 @@ func _run() -> void:
 	):
 		return
 
-	if not await _make_room(guest):
+	if not await _return_to_spawn(guest, spectator, args):
 		return
 	if not await _expect("target respawns for another encounter", func() -> bool: return first.enemy.health == 60):
 		return
@@ -86,13 +86,17 @@ func _hit(client: Node, health_after: int) -> bool:
 	client.combat.auto_requested.emit(false)
 	return true
 
-func _make_room(client: Node) -> bool:
-	var player := client.players.get_node(str(client.multiplayer.get_unique_id())) as LunexNetworkPlayer
-	var start := player.position.z
-	client.joystick.output = Vector2.UP
-	var cleared := await _expect("fighter clears the approach", func() -> bool: return player.position.z < start - 1.1)
-	client.joystick.output = Vector2.ZERO
-	return cleared
+func _return_to_spawn(client: Node, observer: Node, args: PackedStringArray) -> bool:
+	var disconnected_id := str(client.multiplayer.get_unique_id())
+	client.screen.disconnect_requested.emit()
+	if not await _expect("departing fighter leaves the approach clear", func() -> bool:
+		return observer.players.get_child_count() == 3 and not observer.players.has_node(disconnected_id)
+	):
+		return false
+	_join(client, args[0], args[1].to_int(), client.get_parent().name)
+	return await _expect("fighter reenters the same fight from spawn", func() -> bool:
+		return client.players.get_child_count() == 4 and observer.players.get_child_count() == 4
+	)
 
 func _awarded(client: Node) -> bool:
 	var state: Dictionary = client._progress
