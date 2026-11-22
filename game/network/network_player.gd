@@ -13,6 +13,7 @@ var attack_requested := false
 var attack_cooldown := 0.0
 
 var peer_id: int
+var display_name: String
 var desired_direction := Vector3.ZERO
 var input_time_left := 0.0
 var server_position := Vector3.ZERO
@@ -22,7 +23,8 @@ func prepare(id: int, spawn_position: Vector3, player_name: String) -> void:
 	peer_id = id
 	position = spawn_position
 	server_position = spawn_position
-	$PlayerName.text = player_name
+	display_name = player_name
+	$PlayerName.text = display_name
 
 func accept_input(direction: Vector3) -> void:
 	desired_direction = direction.limit_length()

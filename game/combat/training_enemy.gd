@@ -1,7 +1,8 @@
 class_name LunexTrainingEnemy
 extends Node3D
 
-signal defeated_by(peer_id: int)
+signal hit_landed(peer_id: int)
+signal defeated
 
 @export_range(1, 1000) var max_health := 60
 @export_range(0.5, 60.0) var respawn_delay := 4.0
@@ -18,6 +19,7 @@ func take_hit(damage: int, peer_id: int) -> void:
 	if health <= 0:
 		return
 	health = maxi(health - damage, 0)
+	hit_landed.emit(peer_id)
 	if health == 0:
 		$Respawn.start(respawn_delay)
-		defeated_by.emit(peer_id)
+		defeated.emit()

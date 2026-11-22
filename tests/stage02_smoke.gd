@@ -72,7 +72,9 @@ func _run() -> void:
 	quit()
 
 func _client(node_name: String) -> Node:
-	var container := Node.new()
+	var container := SubViewport.new()
+	container.own_world_3d = true
+	container.size = Vector2i(960, 540)
 	container.name = node_name
 	set_multiplayer(MultiplayerAPI.create_default_interface(), NodePath("/root/" + node_name))
 	root.add_child(container)

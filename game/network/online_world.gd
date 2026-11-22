@@ -19,10 +19,13 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @onready var enemy: LunexTrainingEnemy = $TrainingEnemy
 @onready var combat: LunexCombatHUD = $HUD/CombatHUD
 
+@onready var chat: LunexZoneChat = $HUD/ZoneChat
 @onready var progress_hud: LunexProgressHUD = $HUD/ProgressHUD
 
 var _store := LunexProgressStore.new()
 var _profiles: Dictionary[int, String] = {}
+var _contributors: Dictionary[String, bool] = {}
+var _chat_next_ms: Dictionary[int, int] = {}
 var _profile_token := ""
 var _progress: Dictionary = {}
 var _peer: ENetMultiplayerPeer
@@ -43,6 +46,7 @@ func _ready() -> void:
 	combat.auto_requested.connect(func(enabled: bool) -> void: _request_auto.rpc_id(1, enabled))
 	progress_hud.accept_requested.connect(func() -> void: _accept_quest.rpc_id(1))
 	progress_hud.equip_requested.connect(func() -> void: _equip_reward.rpc_id(1))
+	chat.message_requested.connect(func(message: String) -> void: _send_chat.rpc_id(1, message))
 	screen.connect_requested.connect(_connect_client)
 	screen.disconnect_requested.connect(func() -> void: _close_client("Вы вышли из мира."))
 	multiplayer.connected_to_server.connect(func() -> void: _join.rpc_id(1, _player_name, _profile_token))
@@ -66,9 +70,10 @@ func _start_server(args: PackedStringArray) -> void:
 		push_error("Could not open progression database.")
 		get_tree().quit(1)
 		return
-	enemy.defeated_by.connect(_complete_quest)
+	enemy.hit_landed.connect(_record_hit)
+	enemy.defeated.connect(_reward_contributors)
 	_peer = ENetMultiplayerPeer.new()
-	var result := _peer.create_server(port, MAX_PLAYERS)
+	var result := _peer.create_server(port, MAX_PLAYERS, 2)
 	if result != OK:
 		push_error("Could not start ENet server: " + error_string(result))
 		get_tree().quit(1)
@@ -87,7 +92,7 @@ func _connect_client(address: String, port: int, player_name: String) -> void:
 		return
 	_player_name = player_name
 	var client := ENetMultiplayerPeer.new()
-	var result := client.create_client(address, port)
+	var result := client.create_client(address, port, 2)
 	if result != OK:
 		screen.show_idle("Не удалось открыть соединение.")
 		return
@@ -104,6 +109,8 @@ func _close_client(message: String) -> void:
 	joystick.hide()
 	combat.hide()
 	combat.selected = false
+	chat.hide()
+	chat.reset()
 	progress_hud.hide()
 	progress_hud.reset()
 	_progress.clear()
@@ -170,6 +177,7 @@ func _player_spawned(node: Node) -> void:
 	_input_elapsed = INPUT_INTERVAL
 	camera.follow(player)
 	joystick.show()
+	chat.show()
 	progress_hud.show()
 	combat.show()
 	connect_timeout.stop()
@@ -178,6 +186,7 @@ func _player_spawned(node: Node) -> void:
 func _remove_player(id: int) -> void:
 	_spawn_slots.erase(id)
 	_profiles.erase(id)
+	_chat_next_ms.erase(id)
 	var player := players.get_node_or_null(str(id))
 	if player != null:
 		player.queue_free()
@@ -271,7 +280,38 @@ func _equip_reward() -> void:
 		if _store.equip(profile):
 			_publish_progress(player.peer_id, profile)
 
-func _complete_quest(peer_id: int) -> void:
+func _record_hit(peer_id: int) -> void:
 	var profile: String = _profiles.get(peer_id, "")
-	if not profile.is_empty() and _store.complete(profile, quest_reward):
-		_publish_progress(peer_id, profile)
+	if profile.is_empty() or _contributors.has(profile):
+		return
+	var state := _store.read_profile(profile)
+	if state.get("quest") == LunexProgressStore.Quest.ACTIVE:
+		_contributors[profile] = true
+
+func _reward_contributors() -> void:
+	var eligible := _contributors.keys()
+	_contributors.clear()
+	for profile in eligible:
+		if _store.complete(profile, quest_reward):
+			var online_peer: Variant = _profiles.find_key(profile)
+			if online_peer != null:
+				_publish_progress(online_peer, profile)
+
+@rpc("any_peer", "call_remote", "reliable", 1)
+func _send_chat(value: String) -> void:
+	var sender := _sender_player()
+	if sender == null:
+		return
+	var now := Time.get_ticks_msec()
+	if now < _chat_next_ms.get(sender.peer_id, 0):
+		return
+	var message := value.left(LunexZoneChat.MESSAGE_LIMIT).strip_edges()
+	if message.is_empty() or message.contains("\n") or message.contains("\r"):
+		return
+	_chat_next_ms[sender.peer_id] = now + 1000
+	for peer_id in _profiles:
+		_receive_chat.rpc_id(peer_id, sender.display_name, message)
+
+@rpc("authority", "call_remote", "reliable", 1)
+func _receive_chat(sender: String, message: String) -> void:
+	chat.append_message(sender, message)

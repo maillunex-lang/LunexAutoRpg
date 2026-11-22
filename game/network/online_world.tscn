@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -12,6 +12,8 @@
 
 [ext_resource type="PackedScene" path="res://game/progression/progress_hud.tscn" id="9"]
 [ext_resource type="Resource" path="res://game/progression/training_reward.tres" id="10"]
+
+[ext_resource type="PackedScene" path="res://game/social/zone_chat.tscn" id="11"]
 
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
@@ -48,6 +50,9 @@ visible = false
 visible = false
 
 [node name="ProgressHUD" parent="HUD" instance=ExtResource("9")]
+visible = false
+
+[node name="ZoneChat" parent="HUD" instance=ExtResource("11")]
 visible = false
 
 [node name="ConnectTimeout" type="Timer" parent="."]
