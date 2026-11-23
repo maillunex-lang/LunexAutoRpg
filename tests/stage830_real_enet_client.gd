@@ -5,7 +5,11 @@ func run() -> void:
  var world = load("res://game/network/online_world.tscn").instantiate()
  root.add_child(world)
  await process_frame
- world._connect_client("127.0.0.1", 28991, "GameplaySmoke")
+ var smoke_port := 28991
+ for arg in OS.get_cmdline_user_args():
+  if arg.begins_with("--smoke-port="):
+   smoke_port = int(arg.trim_prefix("--smoke-port="))
+ world._connect_client("127.0.0.1", smoke_port, "GameplaySmoke")
  var joined := false
  for i in range(240):
   await process_frame
