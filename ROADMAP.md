@@ -123,3 +123,6 @@
 
 2026-11-23: OWNER APPROVED GDD-08.6 WORLD-086 B, INSTANCE-086 B, PHASE-086 B, SCALING-086 B, RESPAWN-086 B. See [GDD-08-06.md](GDD-08-06.md). @devbridgelunex memory recorded. GH08-023..026 only STUDY/isolated TEST, NO integration.
 2026-11-23: Drafted [GDD-08-07.md](GDD-08-07.md) groups/matchmaking/coop. PARTY-SIZE-087, MATCH-087, LEADER-087, SYNC-087, SOCIAL-087 awaiting owner approval. GH08-027..030 found on GitHub for study, not audited or integrated. No game code/deploy changes.
+
+2026-11-23: OWNER APPROVED GDD-08.7 PARTY-SIZE-087 B, MATCH-087 B, LEADER-087 B, SYNC-087 B, SOCIAL-087 B. See [GDD-08-07.md](GDD-08-07.md). @devbridgelunex memory recorded. GH08-027..030 only study/isolated tests, no integration.
+2026-11-23: Drafted [GDD-08-08.md](GDD-08-08.md) guilds/social progression; GUILD-088, RANK-088, ACTIVITY-088, PROGRESS-088, JOIN-088 awaiting owner approval. GH08-031 found for study, not integrated. No gameplay/deploy changes.
