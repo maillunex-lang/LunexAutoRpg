@@ -879,6 +879,7 @@ func _apply_hud_layout(action_scale: float, joystick_scale: float) -> void:
 	if not is_instance_valid(combat) or not is_instance_valid(joystick):
 		return
 	combat.get_node("Actions").scale = Vector2.ONE * clampf(action_scale, 0.65, 1.35)
+	_apply_hud_positions(hud_editor.action_offset, hud_editor.joystick_offset)
 	joystick.scale = Vector2.ONE * clampf(joystick_scale, 0.65, 1.35)
 
 func _apply_hud_positions(action_offset: Vector2, joystick_offset: Vector2) -> void:
@@ -886,6 +887,8 @@ func _apply_hud_positions(action_offset: Vector2, joystick_offset: Vector2) -> v
 	var viewport_size := get_viewport().get_visible_rect().size
 	var margin := hud_editor.layout_preset.edge_margin
 	var actions: Control = combat.get_node("Actions")
+	var compact_factor := minf(1.0, maxf(0.65, (viewport_size.y - 32.0) / 376.0))
+	actions.scale = Vector2.ONE * clampf(hud_editor.action_slider.value, 0.65, 1.35) * compact_factor
 	var action_size := Vector2(180.0, 376.0) * actions.scale
 	var action_base := Vector2(viewport_size.x - action_size.x - 24.0, viewport_size.y - action_size.y - 24.0)
 	var action_pos := LunexHudLayoutEditor.clamp_to_safe_area(action_base + action_offset, action_size, viewport_size, margin)
