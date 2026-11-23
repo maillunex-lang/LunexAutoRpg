@@ -89,3 +89,9 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - `tests/main_world_enet_server.gd` and `tests/main_world_enet_client.gd` run in separate Godot 4.7.2 headless processes on isolated UDP 29047 and isolated SQLite `user://world_enet_29047.sqlite`.
 - Client sends real ENet movement RPCs; server observes authoritative character coordinates. Both processes PASS; server observed maximum x=21.048 (near the x=21 boundary) and zone remained 0 for a profile without completed gate-watch quest.
 - This verifies one real locked-boundary multiplayer scenario, not unlocked zone crossing, full cross-zone quest auto-navigation, or Android runtime. Stage 3 remains open until those tests pass.
+
+### Stage 3 real ENet unlocked crossing (2026-11-23)
+
+- Added independent server/client scripts `tests/main_world_enet_unlocked_server.gd` and `tests/main_world_enet_unlocked_client.gd` on isolated UDP 29048 and SQLite. Test server seeds the completed `gate_watch` quest for the connected profile, then observes real client input, server-authoritative movement and transition to zone 1 at x=21.123.
+- Both separate Godot processes EXIT 0: server `MAIN_WORLD_ENET_UNLOCKED_SERVER=PASS`, client `MAIN_WORLD_ENET_UNLOCKED_CLIENT=PASS received_authoritative_zone=1`.
+- Together with previous locked-boundary ENet test, verifies gate quest condition and actual zone synchronization on both peers. Cross-zone quest auto-navigation, longer routes, Android acceptance and CI still outstanding.
