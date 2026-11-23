@@ -121,6 +121,11 @@ func enter_zone(next_zone: int, arrival: Vector3) -> void:
 	manual_skill_priority_left = 0.0
 	server_moving = false
 
+func update_zone_without_teleport(next_zone: int) -> void:
+	## Server authority changes logical zone only. Preserve world position and velocity.
+	zone_id = next_zone
+	server_zone_id = next_zone
+
 func set_quest_destination(destination: Vector3) -> void:
 	if health <= 0:
 		return

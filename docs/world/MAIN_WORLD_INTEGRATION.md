@@ -70,3 +70,9 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Full path (start x=0 to final x=168) now resolves. `tests/main_world_rebuilt_path_smoke.gd` samples the actual NavigationServer3D route every 0.2 m and checks collision: `MAIN_WORLD_REBUILT_PATH=PASS connected=true collision_free=true`.
 - Editor import and geometry, visual culling, decorative instance streaming, bridge navigation, obstacle guard and inventory smoke tests PASS. Original baked region resources and original zone scenes remain preserved; this is an additive navigation replacement, not a destructive rewrite.
 - Limitations: only the 0.25–1.1 m collision band and sampled path are verified; full character-radius sweeps, all start/end pairs, authoritative server movement, Android profiling, and actual asynchronous terrain chunk streaming are not yet verified. Do not claim production-ready seamless traversal.
+
+### Stage 3 incremental: server-owned logical boundary crossing
+
+- Added pure `LunexWorldZoneResolver` with X-axis zone boundaries, adjacent-zone validation and starting gate quest check. Server now observes authoritative player world position and changes logical zone without teleporting or zeroing velocity, with a reliable `_zone_changed` notification to the owning client.
+- `tests/main_world_zone_resolver_smoke.gd` PASS for boundaries, adjacency and progression; `tests/main_world_continuous_membership_smoke.gd` PASS for preserved position and velocity. Godot 4.7.2 headless editor import PASS.
+- **Not yet production-ready:** existing quest route code and manual gate travel RPC still teleport; an unqualified player can physically cross a boundary while logical zone remains unchanged. Must implement physical boundary enforcement and continuous quest route traversal, verify real ENet session and mobile client before stage 3 completion. Keep production unchanged.

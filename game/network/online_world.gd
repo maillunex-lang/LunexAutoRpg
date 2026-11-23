@@ -341,6 +341,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
+		_update_continuous_zone_membership()
 		_advance_quest_routes()
 	if _metrics_enabled:
 		_sample_server(delta)
@@ -617,6 +618,34 @@ func _quest_goal_zone(definition: LunexChapterQuestDefinition) -> int:
 			if npc.npc_id == definition.objective_npc_id:
 				return npc.zone_id
 	return -1
+
+func _update_continuous_zone_membership() -> void:
+	for peer_id in _profiles.keys():
+		var player := players.get_node_or_null(str(peer_id)) as LunexNetworkPlayer
+		if player == null or player.health <= 0:
+			continue
+		var candidate := LunexWorldZoneResolver.zone_at_x(player.global_position.x)
+		if candidate == player.zone_id:
+			continue
+		var profile: String = _profiles.get(peer_id, "")
+		if profile.is_empty():
+			continue
+		var watch_complete := false
+		if player.zone_id == 0 and candidate == 1:
+			var progress := _store.read_profile(profile)
+			watch_complete = progress.get("quests", {}).get("gate_watch", {}).get("quest") == LunexProgressStore.Quest.COMPLETE
+		if not LunexWorldZoneResolver.is_valid_crossing(player.zone_id, candidate, player.global_position.x, watch_complete):
+			continue
+		player.update_zone_without_teleport(candidate)
+		_update_zone_visibility(player)
+		_zone_changed.rpc_id(peer_id, candidate)
+
+@rpc("authority", "call_remote", "reliable")
+func _zone_changed(next_zone: int) -> void:
+	if not is_instance_valid(_local_player):
+		return
+	_local_player.update_zone_without_teleport(next_zone)
+	_show_zone(next_zone)
 
 func _advance_quest_routes() -> void:
 	for peer_id in _quest_routes.keys():
