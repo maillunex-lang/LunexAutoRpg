@@ -118,3 +118,8 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 
 - `tests/main_world_crosszone_persistence.gd` creates isolated SQLite profile, completes `gate_watch`, chapter quest `first_steps`, grants XP/gold, closes DB, opens a fresh `LunexProgressStore` instance and verifies all four values survived reopen. PASS.
 - This confirms persistence of zone-unlock prerequisite and chapter rewards across DB reconnect; it does not prove zone position is persisted or full network reconnect behavior. Multiplayer visibility and full reconnect remain outstanding.
+
+### Stage 4 real two-client zone visibility
+
+- Added `tests/main_world_enet_visibility_server.gd` and `tests/main_world_enet_visibility_client.gd`, isolated UDP 29051 and SQLite. Two actual ENet clients connect concurrently. Server verifies both players' MultiplayerSynchronizer visibility is initially enabled, simulates a valid boundary transition at x=21.2 using `_update_continuous_zone_membership`, verifies reciprocal visibility disabled, then returns player to x=20.8 and verifies reciprocal visibility restored. Server and both clients EXIT 0.
+- The boundary positions are set by the test server to isolate visibility behavior from navigation timing; real movement across boundaries is separately verified by earlier ENet tests. The test does not claim a complete client-side render observation or reconnect persistence.
