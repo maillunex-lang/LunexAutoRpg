@@ -11,5 +11,6 @@ objective_npc_id = "quartermaster"
 objective_goal = 1
 title = "Припасы для лагеря"
 objective_description = "Попроси у Кладовщика припасы"
+story_intro = "Лагерь пережил нападение. Кладовщик предлагает пополнить припасы и подготовиться к переходу в дальние земли."
 
 reward_experience = 45

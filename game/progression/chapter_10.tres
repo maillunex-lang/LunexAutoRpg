@@ -11,6 +11,7 @@ objective_npc_id = "bellwarden"
 objective_goal = 1
 title = "Звон из тумана"
 objective_description = "Дойди до Стража колокола"
+story_intro = "Хранитель руин указывает на склеп. Внутри ждёт страж, охраняющий источник проклятого звона."
 
 reward_experience = 60
 reward_item_id = "mist_bell_relic"

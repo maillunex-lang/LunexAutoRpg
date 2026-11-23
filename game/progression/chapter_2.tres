@@ -11,5 +11,6 @@ objective_npc_id = "mentor"
 objective_goal = 1
 title = "Проверка припасов"
 objective_description = "Вернись к Наставнику с докладом"
+story_intro = "Запасы на исходе, но кладовщик не хочет поднимать тревогу. Наставник знает, какие припасы нужно сберечь перед походом."
 
 reward_experience = 20

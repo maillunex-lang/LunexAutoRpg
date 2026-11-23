@@ -109,11 +109,12 @@ func _refresh_chapters() -> void:
 	var selected: LunexChapterQuestDefinition = _chapter_definitions[list.get_selected_items()[0]]
 	var state: Dictionary = states.get(selected.quest_id, {})
 	var status := int(state.get("state", 0))
-	%ChapterDetail.text = selected.objective_description + ("
-Завершено" if status == 2 else ("
-Выполняется" if status == 1 else "
-Не принято"))
-	%ChapterRoute.disabled = status != 1
+	var status_hint := "Завершено" if status == 2 else ("Выполняется" if status == 1 else "Не принято")
+	%ChapterDetail.text = (selected.story_intro + "\n\n" if not selected.story_intro.is_empty() else "") + selected.objective_description + "\n" + status_hint
+	var prerequisite_ready: bool = selected.prerequisite_id.is_empty() or int(states.get(selected.prerequisite_id, {}).get("state", 0)) == 2
+	var available: bool = status == 0 and prerequisite_ready
+	%ChapterRoute.disabled = status != 1 and not available
+	%ChapterRoute.text = "К персонажу за заданием" if available else "Автопуть к цели"
 	var reward: Dictionary = _state.get("quests", {}).get("chapter:" + selected.quest_id, {})
 	var owned: String = reward.get("item", "")
 	%ChapterEquip.disabled = owned.is_empty() or reward.get("equipped", "") == owned

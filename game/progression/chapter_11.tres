@@ -10,6 +10,7 @@ objective_enemy_id = "mist_bell_guardian"
 objective_goal = 1
 title = "Испытание колокола"
 objective_description = "Победи Стража туманного колокола"
+story_intro = "Колокол зовёт тех, кто потерял память. Победи его стража и оборви первый круг пепельного проклятия."
 reward_experience = 125
 reward_item_id = "bell_guardian_emblem"
 reward_rarity = 4

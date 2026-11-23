@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="LunexNpcDialogueDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://game/dialogue/npc_dialogue_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+npc_id = "bellwarden"
+dialogue_text = "~ start\nСтраж колокола: Ты слышишь звон? Значит, он уже знает твоё имя.\n- Я пришёл остановить его\n\tСтраж колокола: Тогда спускайся к последнему стражу. Его победа или гибель решит судьбу лагеря.\n- Мне нужно подготовиться\n\tСтраж колокола: Возвращайся, когда будешь готов.\n"

@@ -11,5 +11,6 @@ objective_npc_id = "quartermaster"
 objective_goal = 1
 title = "Первые шаги"
 objective_description = "Поговори с Кладовщиком во дворе"
+story_intro = "Среди пепла ещё горит последний костёр. Наставник просит тебя познакомиться с людьми, которые удерживают лагерь от гибели."
 
 reward_experience = 15

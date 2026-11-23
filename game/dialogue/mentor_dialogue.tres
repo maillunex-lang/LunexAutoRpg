@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="LunexNpcDialogueDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://game/dialogue/npc_dialogue_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+npc_id = "mentor"
+dialogue_text = "~ start\nНаставник: Последний костёр ещё горит, но туман всё ближе.\nНаставник: Тебе придётся узнать, что случилось с Пепельной долиной.\n- С чего начать?\n\tНаставник: Поговори с кладовщиком. После этого проверим дорогу за воротами.\n- Что за звон?\n\tНаставник: Колокол в разрушенной часовне. По ночам он зовёт тех, кто давно умер.\n- Я готов\n\tНаставник: Тогда не теряй время.\n"

@@ -1,6 +1,18 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://game/dialogue/dialogue_window.gd" id="1"]
+
+[ext_resource type="Script" path="res://game/dialogue/npc_dialogue_definition.gd" id="2"]
+[ext_resource type="PackedScene" path="res://game/dialogue/quest_action_button.tscn" id="3"]
+[ext_resource type="Resource" path="res://game/dialogue/mentor_dialogue.tres" id="npc_0"]
+[ext_resource type="Resource" path="res://game/dialogue/quartermaster_dialogue.tres" id="npc_1"]
+[ext_resource type="Resource" path="res://game/dialogue/mara_dialogue.tres" id="npc_2"]
+[ext_resource type="Resource" path="res://game/dialogue/erin_dialogue.tres" id="npc_3"]
+[ext_resource type="Resource" path="res://game/dialogue/ord_dialogue.tres" id="npc_4"]
+[ext_resource type="Resource" path="res://game/dialogue/keeper_dialogue.tres" id="npc_5"]
+[ext_resource type="Resource" path="res://game/dialogue/bellwarden_dialogue.tres" id="npc_6"]
+[ext_resource type="Resource" path="res://game/dialogue/scout_dialogue.tres" id="npc_7"]
+
 
 [node name="DialogueWindow" type="Control"]
 visible = false
@@ -10,6 +22,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 script = ExtResource("1")
+dialogue_entries = Array[ExtResource("2")]([ExtResource("npc_0"), ExtResource("npc_1"), ExtResource("npc_2"), ExtResource("npc_3"), ExtResource("npc_4"), ExtResource("npc_5"), ExtResource("npc_6"), ExtResource("npc_7")])
 
 [node name="Panel" type="PanelContainer" parent="."]
 anchor_left = 0.20

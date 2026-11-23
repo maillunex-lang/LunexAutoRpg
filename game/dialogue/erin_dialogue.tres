@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="LunexNpcDialogueDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://game/dialogue/npc_dialogue_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+npc_id = "erin"
+dialogue_text = "~ start\nЭрин: Я считала дозоры и потеряла двоих. Последний след ведёт к лесу.\n- Что искать?\n\tЭрин: Огонёк на развилке и царапины на камнях.\n- Принято\n\tЭрин: Держись тропы.\n"
