@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -40,6 +40,8 @@
 [ext_resource type="Resource" path="res://game/progression/chapter_4.tres" id="26"]
 
 [ext_resource type="Resource" path="res://game/progression/chapter_5.tres" id="27"]
+
+[ext_resource type="PackedScene" path="res://game/combat/classes/class_selection.tscn" id="28"]
 
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
@@ -142,3 +144,6 @@ visible = false
 [node name="ConnectTimeout" type="Timer" parent="."]
 wait_time = 8.0
 one_shot = true
+
+[node name="ClassSelection" parent="HUD" instance=ExtResource("28")]
+visible = false

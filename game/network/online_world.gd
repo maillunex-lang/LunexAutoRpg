@@ -37,6 +37,7 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @onready var diagnostics: LunexDiagnosticsHUD = $HUD/DiagnosticsHUD
 @onready var chat: LunexZoneChat = $HUD/ZoneChat
 @onready var progress_hud: LunexProgressHUD = $HUD/ProgressHUD
+@onready var class_selection: LunexClassSelection = $HUD/ClassSelection
 
 var _metrics_enabled := false
 var _metrics_elapsed := 0.0
@@ -66,6 +67,7 @@ func _ready() -> void:
 		_start_server(args)
 		return
 
+	class_selection.class_requested.connect(func(class_id: String) -> void: _choose_class.rpc_id(1, class_id))
 	combat.attack_requested.connect(func() -> void: _request_attack.rpc_id(1, combat.target_index))
 	combat.auto_requested.connect(func(enabled: bool) -> void: _request_auto.rpc_id(1, enabled, combat.target_index))
 	progress_hud.accept_requested.connect(func() -> void: _accept_quest.rpc_id(1, progress_hud.selected_quest))
@@ -151,6 +153,7 @@ func _close_client(message: String) -> void:
 	chat.reset()
 	progress_hud.hide()
 	progress_hud.reset()
+	class_selection.hide()
 	_progress.clear()
 	screen.show_idle(message)
 	if _peer != null:
@@ -192,7 +195,7 @@ func _join(value: String, token: String) -> void:
 		_spawn_slots[id] = slot
 		_profiles[id] = profile
 		var spawn := Vector3((slot % 4) * 2.0 - 3.0, 0.1, floori(slot / 4.0) * 2.0)
-		var player := spawner.spawn([id, spawn, player_name]) as LunexNetworkPlayer
+		var player := spawner.spawn([id, spawn, player_name, state.class_id]) as LunexNetworkPlayer
 		if player == null:
 			_spawn_slots.erase(id)
 			_profiles.erase(id)
@@ -205,7 +208,7 @@ func _join(value: String, token: String) -> void:
 func _spawn_player(data: Variant) -> Node:
 	var player := PLAYER_SCENE.instantiate() as LunexNetworkPlayer
 	player.name = str(data[0])
-	player.prepare(data[0], data[1], data[2])
+	player.prepare(data[0], data[1], data[2], data[3] if data.size() > 3 else "warrior")
 	player.enemy = enemy
 	if multiplayer.is_server():
 		(player.get_node("State") as MultiplayerSynchronizer).public_visibility = false
@@ -320,6 +323,26 @@ func _receive_progress(state: Dictionary) -> void:
 	_progress = state
 	progress_hud.show_state(state, quest_rewards, level_two_experience, chapter_quest_definitions)
 	dialogue_window.set_quest_state(state.get("chapter_quests", {}), chapter_quest_definitions)
+	class_selection.show_state(state)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _choose_class(class_id: String) -> void:
+	var player := _sender_player()
+	if player == null:
+		return
+	var profile: String = _profiles.get(player.peer_id, "")
+	if profile.is_empty() or not _store.assign_class(profile, class_id):
+		_publish_progress(player.peer_id, profile) if not profile.is_empty() else _reject_login.rpc_id(player.peer_id, "Профиль недоступен.")
+		return
+	player.update_class(class_id)
+	_class_changed.rpc(class_id, player.peer_id)
+	_publish_progress(player.peer_id, profile)
+
+@rpc("authority", "call_remote", "reliable")
+func _class_changed(class_id: String, player_id: int) -> void:
+	var player := players.get_node_or_null(str(player_id)) as LunexNetworkPlayer
+	if player != null:
+		player.update_class(class_id)
 
 @rpc("any_peer", "call_remote", "reliable")
 func _request_quest_route(quest_id: String) -> void:

@@ -41,6 +41,8 @@ func _migrate_classes() -> bool:
 				break
 	if ok and not columns.has("class_id"):
 		ok = _db.query("ALTER TABLE profiles ADD COLUMN class_id TEXT NOT NULL DEFAULT 'warrior'")
+	if ok and not columns.has("class_selected"):
+		ok = _db.query("ALTER TABLE profiles ADD COLUMN class_selected INTEGER NOT NULL DEFAULT 1")
 	if ok:
 		ok = _db.query("UPDATE profiles SET class_id = 'warrior' WHERE class_id IS NULL OR class_id = ''")
 	if ok and _db.query("COMMIT"):
@@ -53,20 +55,26 @@ func is_valid_class_id(class_id: String) -> bool:
 	return class_id in ["warrior", "mage", "priest", "bard"]
 
 func assign_class(profile: String, class_id: String) -> bool:
-	if not is_valid_class_id(class_id):
+	if not is_valid_class_id(class_id) or not _db.query("BEGIN IMMEDIATE"):
 		return false
-	return _db.query_with_bindings("UPDATE profiles SET class_id = ? WHERE id = ?", [class_id, profile])
+	var ok: bool = _db.query_with_bindings("UPDATE profiles SET class_id = ?, class_selected = 1 WHERE id = ? AND class_selected = 0", [class_id, profile])
+	var changed: bool = ok and _db.query("SELECT changes() AS n") and int(_db.query_result[0].n) == 1
+	if changed and _db.query("COMMIT"):
+		return true
+	_db.query("ROLLBACK")
+	return false
 
 func load_profile(profile: String) -> Dictionary:
-	if not _db.query_with_bindings("INSERT OR IGNORE INTO profiles (id) VALUES (?)", [profile]):
+	if not _db.query_with_bindings("INSERT OR IGNORE INTO profiles (id, class_selected) VALUES (?, 0)", [profile]):
 		return {}
 	return read_profile(profile)
 
 func read_profile(profile: String) -> Dictionary:
-	if not _db.query_with_bindings("SELECT experience, class_id FROM profiles WHERE id = ?", [profile]) or _db.query_result.is_empty():
+	if not _db.query_with_bindings("SELECT experience, class_id, class_selected FROM profiles WHERE id = ?", [profile]) or _db.query_result.is_empty():
 		return {}
 	var experience: int = _db.query_result[0].experience
 	var class_id: String = str(_db.query_result[0].class_id)
+	var class_selected: bool = int(_db.query_result[0].class_selected) == 1
 	if not _db.query_with_bindings("SELECT quest_id, state, item, equipped FROM quest_progress WHERE profile = ?", [profile]):
 		return {}
 	var quests := {}
@@ -77,7 +85,7 @@ func read_profile(profile: String) -> Dictionary:
 	var chapter := {}
 	for row: Dictionary in _db.query_result:
 		chapter[row.quest_id] = {"state": row.state, "count": row.objective_count}
-	return {"experience": experience, "class_id": class_id, "quests": quests, "chapter_quests": chapter}
+	return {"experience": experience, "class_id": class_id, "class_selected": class_selected, "quests": quests, "chapter_quests": chapter}
 
 func is_active(profile: String, quest_id: String) -> bool:
 	return _db.query_with_bindings(

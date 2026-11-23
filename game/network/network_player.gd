@@ -25,6 +25,7 @@ var attack_cooldown := 0.0
 
 var zone_id := 0
 var peer_id: int
+var class_id := "warrior"
 var display_name: String
 var desired_direction := Vector3.ZERO
 var input_time_left := 0.0
@@ -35,14 +36,22 @@ var server_moving := false
 var attack_sequence := 0
 var _seen_attack := -1
 
-func prepare(id: int, spawn_position: Vector3, player_name: String) -> void:
+func prepare(id: int, spawn_position: Vector3, player_name: String, selected_class: String = "warrior") -> void:
+	class_id = selected_class
 	peer_id = id
 	position = spawn_position
 	_spawn_position = spawn_position
 	health = max_health
 	server_position = spawn_position
 	display_name = player_name
-	$PlayerName.text = display_name
+	$PlayerName.text = display_name + " [" + _class_label() + "]"
+
+func _class_label() -> String:
+	return {"warrior": "Воин", "mage": "Маг", "priest": "Жрец", "bard": "Бард"}.get(class_id, "Воин")
+
+func update_class(selected_class: String) -> void:
+	class_id = selected_class
+	$PlayerName.text = display_name + " [" + _class_label() + "]"
 
 func accept_input(direction: Vector3) -> void:
 	if health <= 0:
