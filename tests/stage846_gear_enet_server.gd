@@ -26,7 +26,15 @@ func run() -> void:
 				seeded = true
 			var state: Dictionary = world._store.read_profile(profile)
 			if int(state.get("gold",0)) == 100 and int(state.get("gear_score",0)) == 330 and state.get("equipped_slots",{}).get("weapon","") == "stage846_weapon":
-				print("STAGE846_SERVER=PASS server_authoritative_equip_upgrade_gold_persist")
+				var fighter: LunexNetworkPlayer
+				for node in world.players.get_children():
+					if node.peer_id == peer_id:
+						fighter = node
+				if fighter == null or fighter.attack_damage != 23 or fighter.max_health != 115:
+					push_error("STAGE846 combat scaling mismatch")
+					quit(1)
+					return
+				print("STAGE846_SERVER=PASS authoritative_equip_upgrade_combat_stats")
 				quit(0)
 				return
 	push_error("STAGE846 server timeout")
