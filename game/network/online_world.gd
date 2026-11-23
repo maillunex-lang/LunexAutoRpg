@@ -635,6 +635,11 @@ func _update_continuous_zone_membership() -> void:
 			var progress := _store.read_profile(profile)
 			watch_complete = progress.get("quests", {}).get("gate_watch", {}).get("quest") == LunexProgressStore.Quest.COMPLETE
 		if not LunexWorldZoneResolver.is_valid_crossing(player.zone_id, candidate, player.global_position.x, watch_complete):
+			# Prevent physical progression through a locked logical boundary.
+			if player.zone_id == 0 and candidate == 1 and not watch_complete:
+				player.global_position.x = 20.5
+				player.velocity.x = 0.0
+				player.desired_direction.x = minf(player.desired_direction.x, 0.0)
 			continue
 		player.update_zone_without_teleport(candidate)
 		_update_zone_visibility(player)
@@ -667,42 +672,35 @@ func _advance_quest_routes() -> void:
 		if not player.quest_auto_enabled:
 			_quest_routes.erase(peer_id)
 			continue
-		var current := player.zone_id
-		var forward := goal_zone > current
-		var gate := gates[current] if forward else back_gates[current]
-		if player.global_position.distance_to(gate.global_position) > gate_distance:
-			continue
-		if current == 0:
-			var state := _store.read_profile(_profiles[peer_id])
+		# Never teleport: server navigation continues to the actual objective.
+		# The logical zone changes only after physically crossing a boundary.
+		if player.zone_id == 0 and goal_zone > 0:
+			var state := _store.read_profile(profile)
 			if state.get("quests", {}).get("gate_watch", {}).get("quest") != LunexProgressStore.Quest.COMPLETE:
 				_quest_routes.erase(peer_id)
+				player.quest_auto_enabled = false
 				_travel_notice.rpc_id(peer_id, "Сначала завершите Дозор у ворот.")
 				continue
-		var next := current + 1 if forward else current - 1
-		var arrival := arrivals[next].global_position
-		arrival.x += float(_spawn_slots.get(peer_id, 0) % 4) * 0.65 - 0.975
-		player.enter_zone(next, arrival)
-		_arrive.rpc_id(peer_id, next, arrival)
-		_update_zone_visibility(player)
-		if next == goal_zone:
-			_quest_routes.erase(peer_id)
-			if to_giver and giver != null:
-				player.set_quest_destination(giver.global_position)
-				_quest_route_notice.rpc_id(peer_id, "Автопуть к персонажу: " + giver.display_name)
-			elif not definition.objective_enemy_id.is_empty():
-				for target in targets:
-					if target.target_id == definition.objective_enemy_id:
-						player.set_quest_destination(target.global_position)
-						break
-			else:
-				for candidate in npcs.get_children():
-					var npc := candidate as LunexNpcActor
-					if npc.npc_id == definition.objective_npc_id:
-						player.set_quest_destination(npc.global_position)
-						break
+		var destination := Vector3.ZERO
+		var found := false
+		if to_giver and giver != null:
+			destination = giver.global_position
+			found = true
+		elif not definition.objective_enemy_id.is_empty():
+			for target in targets:
+				if target.target_id == definition.objective_enemy_id:
+					destination = target.global_position
+					found = true
+					break
 		else:
-			var next_gate := gates[next] if forward else back_gates[next]
-			player.set_quest_destination(next_gate.global_position)
+			for candidate in npcs.get_children():
+				var npc := candidate as LunexNpcActor
+				if npc.npc_id == definition.objective_npc_id:
+					destination = npc.global_position
+					found = true
+					break
+		if found and player.quest_destination.distance_squared_to(destination) > 0.1:
+			player.set_quest_destination(destination)
 
 @rpc("any_peer", "call_remote", "reliable")
 func _request_quest_route(quest_id: String) -> void:
@@ -1005,15 +1003,11 @@ func _request_travel(previous_zone: int) -> void:
 			_travel_notice.rpc_id(player.peer_id, "Сначала завершите «Дозор у ворот».")
 			return
 	var next := current - 1 if at_back or current == 4 else current + 1
-	var arrival := arrivals[next].global_position
-	arrival.x += float(_spawn_slots[player.peer_id] % 4) * 0.65 - 0.975
-	player.enter_zone(next, arrival)
-	for target in targets:
-		if target.zone_id == next:
-			player.set_target(target)
-			break
-	_arrive.rpc_id(player.peer_id, next, arrival)
-	_update_zone_visibility(player)
+	# Gate interaction now requests a physical walk to the adjacent zone.
+	# No zone mutation or teleport is performed by the client RPC.
+	var destination := Vector3(float(next) * 42.0, player.global_position.y, player.global_position.z)
+	player.set_quest_destination(destination)
+	_travel_notice.rpc_id(player.peer_id, "Идём в следующую локацию без телепортации.")
 
 @rpc("authority", "call_remote", "reliable")
 func _travel_notice(message: String) -> void:

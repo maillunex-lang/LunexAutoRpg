@@ -76,3 +76,10 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Added pure `LunexWorldZoneResolver` with X-axis zone boundaries, adjacent-zone validation and starting gate quest check. Server now observes authoritative player world position and changes logical zone without teleporting or zeroing velocity, with a reliable `_zone_changed` notification to the owning client.
 - `tests/main_world_zone_resolver_smoke.gd` PASS for boundaries, adjacency and progression; `tests/main_world_continuous_membership_smoke.gd` PASS for preserved position and velocity. Godot 4.7.2 headless editor import PASS.
 - **Not yet production-ready:** existing quest route code and manual gate travel RPC still teleport; an unqualified player can physically cross a boundary while logical zone remains unchanged. Must implement physical boundary enforcement and continuous quest route traversal, verify real ENet session and mobile client before stage 3 completion. Keep production unchanged.
+
+### Stage 3 continuation: remove gate/quest teleports
+
+- Server `_request_travel` now sets a navigation destination in the adjacent zone instead of calling `enter_zone` and `_arrive` to teleport.
+- Server `_advance_quest_routes` now sets actual objective coordinates, and logical zone updates remain tied to observed server-side position. Existing quest gate checks retained.
+- Added a physical X boundary clamp for an unqualified attempt to leave the training zone (gate-watch progression). Source invariant test verifies no `enter_zone` / `_arrive` in the two travel methods; eight Godot smoke tests and headless editor import PASS.
+- **Not production accepted:** a full ENet two-peer movement test, full character-radius sweep, cross-zone combat visibility and manual Android acceptance remain outstanding. No production deploy.
