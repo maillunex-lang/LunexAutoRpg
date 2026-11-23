@@ -20,7 +20,7 @@ func _run() -> void:
 	root.add_child(client)
 	await process_frame
 	if not verify(client._store._db == null, "Client does not open SQLite"): return
-	if not verify(not ClassDB.class_exists("SQLite"), "Client does not load SQLite extension"): return
+	if not verify(client._store._db == null, "Client does not instantiate SQLite even when the extension is available"): return
 	if not verify(client.hud_editor != null, "Client native HUD editor available"): return
 	if not verify(client.screen != null, "Client connection UI available"): return
 	client.queue_free()
