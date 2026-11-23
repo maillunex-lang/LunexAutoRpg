@@ -186,10 +186,19 @@ func chapter_complete(profile: String, quest_id: String, goal: int, experience: 
 	var changed: bool = ok and _db.query("SELECT changes() AS n") and int(_db.query_result[0].n) == 1
 	if changed and experience >= 0 and experience <= 100000:
 		changed = _db.query_with_bindings("UPDATE profiles SET experience = experience + ?, gold = gold + ? WHERE id = ?", [experience, gold, profile])
+	# New starter items must exist in the editor-authored catalog. Legacy
+	# story and training rewards retain their historical IDs for old saves.
+	if changed and item_id.begins_with("starter_"):
+		var catalog_item := LunexItemCatalog.find(item_id)
+		changed = catalog_item != null and catalog_item.rarity == rarity
 	if changed and not item_id.is_empty() and item_id.length() <= 64:
 		changed = _db.query_with_bindings("INSERT OR IGNORE INTO quest_progress (profile, quest_id, state, item) VALUES (?, ?, ?, ?)", [profile, "chapter:" + quest_id, Quest.COMPLETE, item_id])
 		if changed:
-			changed = _db.query_with_bindings("INSERT OR IGNORE INTO equipment_items (profile, item_id, slot, rarity) VALUES (?, ?, ?, ?)", [profile, item_id, equipment_slot_for_item(item_id), rarity])
+			var item_slot: String = equipment_slot_for_item(item_id)
+			if item_id.begins_with("starter_"):
+				var catalog_item := LunexItemCatalog.find(item_id)
+				item_slot = catalog_item.slot if catalog_item != null else ""
+			changed = not item_slot.is_empty() and _db.query_with_bindings("INSERT OR IGNORE INTO equipment_items (profile, item_id, slot, rarity) VALUES (?, ?, ?, ?)", [profile, item_id, item_slot, rarity])
 	if changed and _db.query("COMMIT"):
 		return true
 	_db.query("ROLLBACK")

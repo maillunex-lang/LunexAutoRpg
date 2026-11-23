@@ -7,6 +7,23 @@ extends LunexPlayer
 
 @export_range(1, 1000) var max_health := 100
 @export_range(0.5, 20.0, 0.1) var revival_delay := 4.0
+# Server-controlled provisional combat scaling. Base values remain editable in Godot.
+@export_range(0, 100, 1) var damage_per_100_gs := 1
+@export_range(0, 500, 1) var health_per_100_gs := 5
+var _base_attack_damage := 20
+var _base_max_health := 100
+
+func apply_equipment_score(score: int) -> void:
+	if not multiplayer.is_server():
+		return
+	var units: int = clampi(score, 0, 10000) / 100
+	var new_health: int = _base_max_health + units * health_per_100_gs
+	attack_damage = _base_attack_damage + units * damage_per_100_gs
+	var difference: int = new_health - max_health
+	max_health = new_health
+	if health > 0:
+		health = clampi(health + difference, 1, max_health)
+
 
 @onready var navigation: NavigationAgent3D = $NavigationAgent3D
 
@@ -48,6 +65,8 @@ func prepare(id: int, spawn_position: Vector3, player_name: String, selected_cla
 	peer_id = id
 	position = spawn_position
 	_spawn_position = spawn_position
+	_base_attack_damage = attack_damage
+	_base_max_health = max_health
 	health = max_health
 	ability_energy = 100.0
 	server_position = spawn_position

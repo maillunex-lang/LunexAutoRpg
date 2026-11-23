@@ -13,5 +13,6 @@ title = "Пепельное предупреждение"
 objective_description = "Победи Пепельного скитальца возле лагеря"
 story_intro = "Мара заметила у лагеря пепельного скитальца. Его нельзя подпускать к последним запасам. Останови нежить."
 
+reward_item_id = "starter_boots"
 reward_experience = 40
 objective_enemy_id = "ash_wanderer"

@@ -266,6 +266,7 @@ func _join(value: String, token: String) -> void:
 			_profiles.erase(id)
 			_reject_login.rpc_id(id, "Не удалось создать персонажа.")
 			return
+		player.apply_equipment_score(int(state.get("gear_score", 0)))
 		_update_zone_visibility(player)
 		_receive_progress.rpc_id(id, state)
 		break
@@ -803,6 +804,11 @@ func _chapter_complete_verified(peer_id: int, quest_id: String) -> bool:
 func _publish_progress(peer_id: int, profile: String) -> void:
 	var state := _store.read_profile(profile)
 	if not state.is_empty():
+		for child in players.get_children():
+			var player := child as LunexNetworkPlayer
+			if player != null and player.peer_id == peer_id and multiplayer.is_server():
+				player.apply_equipment_score(int(state.get("gear_score", 0)))
+				break
 		_receive_progress.rpc_id(peer_id, state)
 
 @rpc("any_peer", "call_remote", "reliable")
