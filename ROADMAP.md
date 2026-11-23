@@ -95,3 +95,5 @@
 2026-11-23: Owner accepted 7.7.7 and authorized 7.7.8. Isolated four-class Android combat test [deployed](STAGE-07-07-08-RESULT.md) on UDP 28788 with independent SQLite and public signed APK at https://rikagro.ru/download/LunexAutoRpg-0.7.7.8-test.apk (HTTP 200). Server active, 179/179 prior automated checks passed. Manual Android/two-client acceptance PENDING. Production and previous tests untouched. No next stage started.
 
 2026-11-23: Stage 7.7.8 live server smoke supplement: 7/7 two-client Godot ENet checks passed on UDP 28788; authoritative movement, wall collision, reconnect and error recovery verified. Manual Android combat/healing still pending. No new stage started.
+
+2026-11-23: GDD-08.1 dark fantasy concept C confirmed; owner approved WORLD-081 B (one map/five zones), TERRAIN-081 A (native Godot Mesh scenes), ART-081 B (Stylized Dark Fantasy). [GDD-08-01.md](GDD-08-01.md) records the design, eight proposed stages and five GitHub candidates for study/compatibility only. **No GDD-08 implementation or candidate integration authorized** until manual 7.7.8 acceptance and separate permission.
