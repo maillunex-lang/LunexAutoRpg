@@ -165,3 +165,14 @@
 2026-11-23 NEXUS run4 e6324773728f4170adb8819041f215d0: six isolated first-chapter integration milestones verified. Added 2 editable NPCs and 2 enemies in existing two zones, 10 sequential NPC-visit quest definitions, four-class/eight-skill combat wiring and telegraphed enemy AI, transactional XP and two chapter reward items/equip. 15 Godot standalone test suites PASS; isolated ENet two-client 7/7 PASS; debug APK export 60705235 bytes SHA256 905e5010bef670b3194ce16421012183b3c6000ac07894a16b4d8005a4ba2f82. IMPORTANT incomplete five-zone world, varied combat/cutscenes, six equipment slots/GS, real Android acceptance and production release. VPS docs/nexus/RUN4_REPORT.md. Production unchanged.
 
 2026-11-23 NEXUS run5 86b992667a684141a64a31024e56bfa6: 15 sequential milestones verified, five native editable zones (three new provisional navigation meshes), NPCs and combat quests, boss sidequest, six-slot SQLite equipment, five rarities, server GS, gold and safe upgrades. 21 Godot suites PASS, isolated ENet 7/7 PASS, Android debug APK 60731726 bytes SHA256 daf7f2eb455a66d9972f219f3238e4d1e504f0072c7a15cc3ac148e9ec757b66. IMPORTANT live zone navigation/boss defeat, Android physical acceptance, full MMO systems remain unfinished; production unchanged. See docs/nexus/RUN5_REPORT.md.
+
+## WORLD-SEAMLESS-001 A — isolated demo (2026-11-23)
+
+- [x] Approved scope: seamless exterior world with five zones, cities allowed separate loads, instances separate.
+- [x] Isolated VPS worktree, two Godot-native editable chunk scenes, streaming controller, continuous player and waypoint travel.
+- [x] Godot 4.7.2 headless import and smoke tests; existing stage831/832/844/845/848/849/850 regressions PASS.
+- [ ] Real Android performance and manual visual acceptance.
+- [ ] Full five-zone environment and navmesh integration, ENet authority, background asset loading and multiplayer validation.
+- [ ] Production integration/deployment (requires separate owner acceptance).
+
+Design and limitations: `docs/world/WORLD-SEAMLESS-001.md`. Isolated branch `agent/world-seamless-001-20261123`.
