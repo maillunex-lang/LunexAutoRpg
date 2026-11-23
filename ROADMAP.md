@@ -147,3 +147,7 @@
 
 2026-11-23: OWNER APPROVED GDD-08.14 EVENT-0814 B, EXPLORE-0814 B, MAP-0814 B, PARTICIPATE-0814 B, WORLDSTATE-0814 B. See [GDD-08-14.md](GDD-08-14.md). @devbridgelunex memory saved. GH08-044..045 STUDY/isolated TEST only, NO integration.
 2026-11-23: Drafted [GDD-08-15.md](GDD-08-15.md) mobile controls, auto-play, quest navigation, HUD. MOVE-0815, AUTO-0815, QUESTNAV-0815, HUD-0815, AUTOSAFETY-0815 awaiting owner approval. GH08-046..048 discovered for study, not audited/integrated. No gameplay/deploy changes.
+
+2026-11-23 OWNER DELEGATED all future GDD choices to assistant: default recommendations automatically selected and authorized for stagewise implementation; no approval per GDD required. Caveats remain: external GitHub candidates STUDY / isolated TEST ONLY, NO integration; native Godot editability and authoritative-server architecture required. @devbridgelunex memory updated.
+2026-11-23 GDD-08.15 ALL B autonomously approved under owner standing authorization. [GDD-08-15.md](GDD-08-15.md) MOVE/AUTO/QUESTNAV/HUD/AUTOSAFETY. First isolated native Godot HUD layout preset/editor developed under /opt/lunex-autorpg/stage815-isolated, import success, tests 9/9 PASS. NOT wired to running game. No production, APK or existing stage76 modifications. Next required step: tap navigation and complete HUD save/safe-area + ENet regression.
+2026-11-23 [GDD-08-16.md](GDD-08-16.md) chosen autonomously: CAMERA/QUALITY/VFX/LOD/PERF B; design only until 08.15 ready for integration. Candidate code not integrated.

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LunexHudLayoutPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/mobile/hud_layout_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+preset_name = "Стандарт"
+action_scale = 1.0
+joystick_scale = 1.0
+edge_margin = 24.0
+actions_right = true

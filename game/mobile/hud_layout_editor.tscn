@@ -1,0 +1,58 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/mobile/hud_layout_editor.gd" id="1"]
+[ext_resource type="Resource" path="res://game/mobile/hud_layout_preset.tres" id="2"]
+
+[node name="HudLayoutEditor" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 310.0
+offset_bottom = 190.0
+script = ExtResource("1")
+layout_preset = ExtResource("2")
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Options" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Heading" type="Label" parent="Panel/Options"]
+layout_mode = 2
+text = "Настройка управления"
+horizontal_alignment = 1
+
+[node name="ActionValue" type="Label" parent="Panel/Options"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Кнопки: 100%"
+
+[node name="ActionScale" type="HSlider" parent="Panel/Options"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 0.65
+max_value = 1.35
+step = 0.05
+value = 1.0
+
+[node name="JoystickValue" type="Label" parent="Panel/Options"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Джойстик: 100%"
+
+[node name="JoystickScale" type="HSlider" parent="Panel/Options"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 0.65
+max_value = 1.35
+step = 0.05
+value = 1.0
+
+[node name="Reset" type="Button" parent="Panel/Options"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Сбросить"
