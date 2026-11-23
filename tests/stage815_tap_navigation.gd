@@ -17,5 +17,11 @@ func run_tests() -> void:
 	check(not LunexTapNavigation.should_cancel_for_manual(Vector2(0.02,0)), "Deadzone")
 	var scene := load("res://game/network/online_world.tscn") as PackedScene
 	check(scene != null, "World scene loads")
+	var route := PackedVector3Array([Vector3.ZERO, Vector3(1, 0, 0), Vector3(5, 0, 0)])
+	check(LunexTapNavigation.valid_route(route, Vector3(5,0,0)), "Valid route reaches destination")
+	check(not LunexTapNavigation.valid_route(route, Vector3(50,0,0)), "Reject route ending away from destination")
+	check(LunexTapNavigation.route_direction(Vector3(0.9,0,0), Vector3(5,0,0), route, Vector2.ZERO).x > 0.9, "Skip already reached waypoint")
+	check(LunexTapNavigation.route_direction(Vector3(4.9,0,0), Vector3(5,0,0), route, Vector2.ZERO) == Vector2.ZERO, "Stop at final destination")
+	check(LunexTapNavigation.route_direction(Vector3.ZERO, Vector3(5,0,0), route, Vector2.RIGHT) == Vector2.ZERO, "Manual override blocks route")
 	print("STAGE815_TAP_TOTAL=", count)
 	quit()

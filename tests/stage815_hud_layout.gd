@@ -44,6 +44,12 @@ func _run() -> void:
 	if not require_condition(world_node.has_node("HUD/HudSettingsButton"), "Settings button present in main scene"): return
 	if not require_condition(world_node.has_node("HUD/HudLayoutEditor"), "Layout editor present in main scene"): return
 	world_node.free()
+	if not require_condition(LunexHudLayoutEditor.clamp_to_safe_area(Vector2(-100, -20), Vector2(200, 100), Vector2(800, 400), 24.0) == Vector2(24,24), "Safe area clamps top left"): return
+	if not require_condition(LunexHudLayoutEditor.clamp_to_safe_area(Vector2(999,999), Vector2(200,100), Vector2(800,400), 24.0) == Vector2(576,276), "Safe area clamps bottom right"): return
+	editor.action_offset = Vector2(22, 33)
+	if not require_condition(editor.save_layout(), "Dragged HUD offset saved"): return
+	editor.action_offset = Vector2.ZERO
+	if not require_condition(editor.load_layout() and editor.action_offset == Vector2(22,33), "Dragged HUD offset restored"): return
 	editor.queue_free()
 	print("STAGE815_TOTAL=", checks)
 	quit()

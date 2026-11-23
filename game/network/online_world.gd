@@ -99,7 +99,9 @@ func _ready() -> void:
 
 	hud_settings.pressed.connect(func() -> void: hud_editor.visible = not hud_editor.visible)
 	hud_editor.layout_changed.connect(_apply_hud_layout)
+	hud_editor.position_changed.connect(_apply_hud_positions)
 	_apply_hud_layout(hud_editor.action_slider.value, hud_editor.joystick_slider.value)
+	_apply_hud_positions(hud_editor.action_offset, hud_editor.joystick_offset)
 	class_selection.class_requested.connect(func(class_id: String) -> void: _choose_class.rpc_id(1, class_id))
 	combat.skill_requested.connect(func(ability_id: String) -> void: _request_skill.rpc_id(1, ability_id, combat.target_index))
 	combat.attack_requested.connect(func() -> void: _request_attack.rpc_id(1, combat.target_index))
@@ -302,7 +304,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Navigation only across a valid baked navmesh. No direct-line obstacle bypass.
 	var map := get_world_3d().navigation_map
 	var path := NavigationServer3D.map_get_path(map, _local_player.global_position, point, true)
-	if path.size() < 2 or path[path.size() - 1].distance_to(point) > 2.0:
+	if not LunexTapNavigation.valid_route(path, point):
 		return
 	_tap_destination = point
 	_tap_active = true
@@ -336,15 +338,11 @@ func _physics_process(delta: float) -> void:
 		_tap_active = false
 	elif _tap_active:
 		var path := NavigationServer3D.map_get_path(get_world_3d().navigation_map, _local_player.global_position, _tap_destination, true)
-		if path.size() < 2:
+		var direction2 := LunexTapNavigation.route_direction(_local_player.global_position, _tap_destination, path, joystick.output)
+		if direction2 == Vector2.ZERO:
 			_tap_active = false
 		else:
-			var next_point: Vector3 = path[1]
-			var direction2 := LunexTapNavigation.input_direction(_local_player.global_position, next_point, joystick.output)
-			if direction2 == Vector2.ZERO:
-				_tap_active = false
-			else:
-				direction = Vector3(direction2.x, 0.0, direction2.y)
+			direction = Vector3(direction2.x, 0.0, direction2.y)
 	_move.rpc_id(1, Vector2(direction.x, direction.z))
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
@@ -757,6 +755,7 @@ func _travel_notice(message: String) -> void:
 func _arrive(next: int, arrival: Vector3) -> void:
 	if not is_instance_valid(_local_player):
 		return
+	_tap_active = false
 	_local_player.enter_zone(next, arrival)
 	camera.follow(_local_player)
 	chat.reset()
@@ -802,3 +801,14 @@ func _apply_hud_layout(action_scale: float, joystick_scale: float) -> void:
 		return
 	combat.get_node("Actions").scale = Vector2.ONE * clampf(action_scale, 0.65, 1.35)
 	joystick.scale = Vector2.ONE * clampf(joystick_scale, 0.65, 1.35)
+
+func _apply_hud_positions(action_offset: Vector2, joystick_offset: Vector2) -> void:
+	var viewport_size := get_viewport().get_visible_rect().size
+	var margin := hud_editor.layout_preset.edge_margin
+	var actions: Control = combat.get_node("Actions")
+	var action_base := Vector2(viewport_size.x - 228.0, viewport_size.y - 410.0)
+	var action_pos := LunexHudLayoutEditor.clamp_to_safe_area(action_base + action_offset, actions.size * actions.scale, viewport_size, margin)
+	actions.position = action_pos - Vector2(viewport_size.x, viewport_size.y)
+	var joystick_base := Vector2(24.0, viewport_size.y - 210.0)
+	var joystick_pos := LunexHudLayoutEditor.clamp_to_safe_area(joystick_base + joystick_offset, joystick.size * joystick.scale, viewport_size, margin)
+	joystick.position = joystick_pos - Vector2(0.0, viewport_size.y)
