@@ -77,7 +77,18 @@ func _flash_hit() -> void:
 	_vfx_tween.tween_callback(func() -> void: %SkillFlash.hide())
 
 func show_skill_feedback(message: String, cooldown_ms: int = 0) -> void:
-	%SkillNotice.text = "Навык: " + message
+	var messages := {
+		"out_of_range": "Подойди ближе к врагу или включи автобой",
+		"no_line_of_sight": "Цель за препятствием",
+		"target_defeated": "Враг уже побеждён",
+		"no_ally": "Нет подходящего союзника",
+		"not_learned": "Умение пока не изучено",
+		"invalid_target": "Цель недоступна или слишком далеко",
+		"no_resource": "Недостаточно энергии",
+		"cooldown": "Умение перезаряжается",
+		"invalid_actor": "Действие сейчас недоступно"
+	}
+	%SkillNotice.text = "Умение применено" if message.begins_with("ok:") else str(messages.get(message, message))
 	if not message.begins_with("ok:"):
 		return
 	var id := message.trim_prefix("ok:")
