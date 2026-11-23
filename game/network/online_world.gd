@@ -43,6 +43,7 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @onready var arrivals: Array[Marker3D] = [$CourtyardArrival, $Passage/Arrival, $AshGrove/Geometry/Arrival, $SilentRuins/Geometry/Arrival, $MistBell/Geometry/Arrival]
 @onready var zone_hud: LunexZoneHUD = $HUD/ZoneHUD
 @onready var passage: NavigationRegion3D = $Passage
+@onready var world_visual_streamer: LunexWorldVisualStreamer = $WorldVisualStreamer
 @onready var combat: LunexCombatHUD = $HUD/CombatHUD
 
 @onready var diagnostics: LunexDiagnosticsHUD = $HUD/DiagnosticsHUD
@@ -344,6 +345,8 @@ func _physics_process(delta: float) -> void:
 		_sample_server(delta)
 	if not is_instance_valid(_local_player):
 		return
+	if not multiplayer.is_server():
+		world_visual_streamer.update_for_position(_local_player.global_position)
 	combat.refresh(_local_player)
 	combat.refresh_skills(_local_player.class_id, int(_progress.get("experience", 0)), _local_player.ability_energy)
 	zone_hud.travel.visible = _local_player.health > 0 and ( _local_player.global_position.distance_to(gates[_local_player.zone_id].global_position) <= gate_distance or (_local_player.zone_id > 0 and _local_player.global_position.distance_to(back_gates[_local_player.zone_id].global_position) <= gate_distance))

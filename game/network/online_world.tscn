@@ -1,4 +1,4 @@
-[gd_scene load_steps=56 format=3]
+[gd_scene load_steps=57 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/world/training_zone_open.tscn" id="2"]
@@ -73,6 +73,7 @@
 [ext_resource type="Resource" path="res://game/progression/side_ruin_seal.tres" id="side_2"]
 
 [ext_resource type="PackedScene" path="res://game/world/zone_corridor.tscn" id="world_corridor"]
+[ext_resource type="Script" path="res://game/world/world_visual_streamer.gd" id="world_visual_streamer"]
 
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
@@ -140,6 +141,10 @@ position = Vector3(0, 0, -7.3)
 
 [node name="MistBellBackGate" parent="MistBell" instance=ExtResource("18")]
 position = Vector3(0, 0, -7.3)
+
+[node name="WorldVisualStreamer" type="Node3D" parent="."]
+script = ExtResource("world_visual_streamer")
+visual_groups = Array[NodePath]([NodePath("../Navigation/Zone"), NodePath("../Passage/Geometry"), NodePath("../AshGrove/Geometry"), NodePath("../SilentRuins/Geometry"), NodePath("../MistBell/Geometry")])
 
 [node name="WorldCorridors" type="Node3D" parent="."]
 

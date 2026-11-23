@@ -33,3 +33,9 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Main `online_world.tscn` references these open scene variants and the four physical collision roads. Geometry smoke `tests/main_world_geometry_smoke.gd` PASS: all four corridor collisions and wall openings verified.
 - Godot 4.7.2 editor import PASS and stage844 regression PASS.
 - **Not yet seamless for actual player movement:** navmesh still disconnected and server still teleports via gate RPC. Visual streamer not wired into main game because visual hide and collision lifecycle require safe separation. Stage 2 remains IN PROGRESS.
+
+### Stage 2 continuation: client visual streaming integrated
+
+- `WorldVisualStreamer` is now wired into the actual OnlineWorld scene. It updates on clients with a valid local player and toggles geometry visibility by distance, leaving collision, NPC simulation, navigation meshes, and server world intact.
+- The new `tests/main_world_visual_streaming_smoke.gd` verifies distant-zone culling, destination restoration and preserved NavigationRegion3D navmesh. PASS.
+- This is **visibility culling, not asynchronous PackedScene streaming or RAM release**. Visual scenes remain in memory. The stage 2 objective of true chunk streaming and connected navigation remains open; do not claim FPS/RAM gains until measured on Android.
