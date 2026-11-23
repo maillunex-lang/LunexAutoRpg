@@ -5,6 +5,9 @@ signal attack_requested
 signal auto_requested(enabled: bool)
 signal skill_requested(ability_id: String)
 var _skill_ids := ["", ""]
+# Client countdown is cosmetic; server remains authoritative.
+var _local_cooldown_end: Dictionary = {}
+var _vfx_tween: Tween
 
 var zone_id := 0
 var selected := false
@@ -44,13 +47,37 @@ func refresh_skills(class_id: String, experience: int, energy: float) -> void:
 		var skill: LunexAbilityDefinition = load("res://game/combat/abilities/" + ids[index] + ".tres")
 		button.show()
 		button.text = {"warrior_strike": "Мощный удар", "warrior_shield": "Щит", "mage_bolt": "Магический снаряд", "mage_fireball": "Огненный шар", "priest_heal": "Исцеление", "priest_blessing": "Благословение", "bard_song": "Боевая песня", "bard_restore": "Восстановление"}.get(ids[index], ids[index])
-		button.disabled = skill == null or skill.unlock_level > level or energy < skill.resource_cost
+		var remaining := maxf(0.0, (int(_local_cooldown_end.get(ids[index], 0)) - Time.get_ticks_msec()) / 1000.0)
+		button.disabled = skill == null or skill.unlock_level > level or energy < skill.resource_cost or remaining > 0.0
+		if remaining > 0.0:
+			button.text += " %.1fс" % remaining
 		if skill != null and skill.unlock_level > level:
 			button.text += " (ур. %d)" % skill.unlock_level
 	%Energy.text = "Энергия: %d / 100" % int(energy)
 
-func show_skill_feedback(message: String) -> void:
+func show_skill_feedback(message: String, cooldown_ms: int = 0) -> void:
 	%SkillNotice.text = "Навык: " + message
+	if not message.begins_with("ok:"):
+		return
+	var id := message.trim_prefix("ok:")
+	if id not in _skill_ids:
+		return
+	_local_cooldown_end[id] = Time.get_ticks_msec() + maxi(cooldown_ms, 0)
+	# Lightweight procedural HUD pulse: no textures, particles or additional draw calls per frame.
+	if is_instance_valid(_vfx_tween) and _vfx_tween.is_running():
+		_vfx_tween.kill()
+	%SkillFlash.color = Color(0.35, 0.7, 1.0, 0.24) if id.begins_with("mage") or id.begins_with("priest") else Color(1.0, 0.7, 0.2, 0.24)
+	%SkillFlash.show()
+	_vfx_tween = create_tween()
+	_vfx_tween.tween_property(%SkillFlash, "modulate:a", 0.0, 0.35).from(1.0)
+	_vfx_tween.tween_callback(func() -> void: %SkillFlash.hide())
+
+func reset_skill_ui() -> void:
+	_local_cooldown_end.clear()
+	if is_instance_valid(_vfx_tween):
+		_vfx_tween.kill()
+	%SkillFlash.hide()
+	%SkillFlash.modulate.a = 1.0
 
 func enter_zone(next_zone: int, first_target: int) -> void:
 	zone_id = next_zone

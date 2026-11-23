@@ -168,6 +168,7 @@ func _close_client(message: String) -> void:
 	camera.follow(null)
 	joystick.hide()
 	combat.hide()
+	combat.reset_skill_ui()
 	combat.selected = false
 	combat.target_index = 0
 	zone_hud.hide()
@@ -356,6 +357,7 @@ func _request_skill(ability_id: String, target_index: int) -> void:
 		_skill_feedback.rpc_id(player.peer_id, str(result.get("reason", "unavailable")), player.ability_energy)
 		return
 	player.ability_energy = float(result.resource_left)
+	player.manual_skill_priority_left = 0.45
 	if result.effect_kind == "damage" and target != null:
 		target.take_hit(int(result.magnitude), player.peer_id)
 		player.attack_sequence += 1
@@ -371,7 +373,7 @@ func _request_skill(ability_id: String, target_index: int) -> void:
 				var member := candidate as LunexNetworkPlayer
 				if member != null and member.health > 0 and member.zone_id == player.zone_id and member.global_position.distance_to(player.global_position) <= skill.max_range:
 					member.apply_blessing(int(result.magnitude), float(skill.status_duration))
-	_skill_feedback.rpc_id(player.peer_id, "ok:" + ability_id, player.ability_energy)
+	_skill_feedback.rpc_id(player.peer_id, "ok:" + ability_id, player.ability_energy, int(result.cooldown_until_ms) - Time.get_ticks_msec())
 
 # Server chooses an eligible ally, not a client-supplied peer ID.
 func _nearest_ally(caster: LunexNetworkPlayer, radius: float, injured_only: bool) -> LunexNetworkPlayer:
@@ -390,10 +392,10 @@ func _nearest_ally(caster: LunexNetworkPlayer, radius: float, injured_only: bool
 	return best
 
 @rpc("authority", "call_remote", "reliable")
-func _skill_feedback(message: String, energy: float) -> void:
+func _skill_feedback(message: String, energy: float, cooldown_ms: int = 0) -> void:
 	if is_instance_valid(_local_player):
 		_local_player.ability_energy = energy
-	combat.show_skill_feedback(message)
+	combat.show_skill_feedback(message, cooldown_ms)
 
 @rpc("any_peer", "call_remote", "reliable")
 func _request_auto(enabled: bool, index: int) -> void:

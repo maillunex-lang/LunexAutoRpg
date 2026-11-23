@@ -27,6 +27,8 @@ var quest_auto_enabled := false
 var quest_destination := Vector3.ZERO
 var attack_requested := false
 var attack_cooldown := 0.0
+# A manual skill briefly takes precedence over the automatic attack.
+var manual_skill_priority_left := 0.0
 
 var zone_id := 0
 var peer_id: int
@@ -97,6 +99,7 @@ func enter_zone(next_zone: int, arrival: Vector3) -> void:
 	auto_enabled = false
 	quest_auto_enabled = false
 	attack_requested = false
+	manual_skill_priority_left = 0.0
 	server_moving = false
 
 func set_quest_destination(destination: Vector3) -> void:
@@ -191,6 +194,7 @@ func _revive() -> void:
 	collision_layer = _standing_collision_layer
 	attack_requested = false
 	attack_cooldown = 0.0
+	manual_skill_priority_left = 0.0
 	health = max_health
 	ability_energy = 100.0
 	shield_points = 0
@@ -212,14 +216,16 @@ func _physics_process(delta: float) -> void:
 		input_time_left = maxf(input_time_left - delta, 0.0)
 		var direction := desired_direction if input_time_left > 0.0 else Vector3.ZERO
 		attack_cooldown = maxf(attack_cooldown - delta, 0.0)
+		manual_skill_priority_left = maxf(manual_skill_priority_left - delta, 0.0)
 		ability_energy = minf(100.0, ability_energy + delta * 5.0)
 		if auto_enabled:
-			direction = _auto_direction()
+			if manual_skill_priority_left <= 0.0:
+				direction = _auto_direction()
 		elif quest_auto_enabled:
 			direction = _quest_direction()
 		if attack_requested:
 			attack_requested = false
-			if _can_attack():
+			if manual_skill_priority_left <= 0.0 and _can_attack():
 				_attack()
 		simulate(direction, delta)
 		server_position = position

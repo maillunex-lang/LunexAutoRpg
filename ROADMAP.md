@@ -87,3 +87,5 @@
 2026-11-23: Owner accepted 7.7.3. Stage 7.7.4 implemented in dev: [Warrior and Mage abilities](STAGE-07-07-04-RESULT.md), authoritative skill RPC, training-target damage, shield, energy regeneration, editable HUD and resources. 117/117 automated checks passed; Android debug export/signature OK. No running services updated. Awaiting acceptance; stage 7.7.5 not started.
 
 2026-11-23: Owner accepted 7.7.4 ("Делай"). Implemented stage 7.7.5: [Priest and Bard support skills](STAGE-07-07-05-RESULT.md), server-selected allies, healing, temporary damage reduction and four editable skills. 134/134 automated tests PASS; Android debug export and signature OK. No live service changed. Awaiting 7.7.5 acceptance, 7.7.6 not started.
+
+2026-11-23: Owner accepted 7.7.5 ("Все ок, делай дальше"). Stage 7.7.6 implemented in dev: [manual skill priority, HUD cooldowns and procedural VFX](STAGE-07-07-06-RESULT.md). 146/146 automated checks passed; Godot headless import, Android debug export and signature OK. Live servers unchanged. Awaiting 7.7.6 acceptance; 7.7.7 not started.
