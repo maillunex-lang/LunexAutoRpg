@@ -452,6 +452,18 @@ func _skill_feedback(message: String, energy: float, cooldown_ms: int = 0) -> vo
 		_local_player.ability_energy = energy
 	combat.show_skill_feedback(message, cooldown_ms)
 
+# Called only by authoritative server gameplay transitions (future arena/boss controllers).
+# Disables an already running auto-mode immediately when the context becomes unsafe.
+func set_server_auto_context(peer_id: int, in_pvp: bool, dangerous_boss_phase: bool) -> void:
+	if not multiplayer.is_server():
+		return
+	_pvp_instances[peer_id] = in_pvp
+	_dangerous_boss_phases[peer_id] = dangerous_boss_phase
+	var player := players.get_node_or_null(str(peer_id)) as LunexNetworkPlayer
+	if player != null and (in_pvp or dangerous_boss_phase):
+		player.set_auto(false)
+		player.quest_auto_enabled = false
+
 @rpc("any_peer", "call_remote", "reliable")
 func _request_auto(enabled: bool, index: int) -> void:
 	var player := _sender_player()
