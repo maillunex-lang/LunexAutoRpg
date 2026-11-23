@@ -128,3 +128,8 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 
 - `tests/main_world_enet_reconnect_server.gd` and `tests/main_world_enet_reconnect_client.gd`: separate server and two sequential client processes on isolated UDP 29052/SQLite. Both clients use same stable token. Server seeds gate-watch completion, `first_steps` completion, XP=25 and gold=40, publishes progress. First client verifies receipt and exits, second reconnects under same profile and independently verifies receipt of all progress. Server verifies identical profile and persisted database state. All three processes EXIT 0.
 - Player world position is currently assigned from spawn slot on join; no persistent world-coordinate restore is claimed. Boss and inventory regressions have passed as separate tests; no full Android acceptance or CI green confirmation yet.
+
+### Stage 5 Android export smoke
+
+- On VPS, Godot 4.7.2 `--headless --path . --export-debug Android /tmp/lunex-stage5-debug.apk` EXIT 0, signed APK produced (~59 MiB). `apksigner verify` checked separately. This is a debug integration build, not a production release.
+- No physical Android device was connected to this VPS test; manual UX/gameplay acceptance and CI green status are not yet verified. GitHub Actions workflow only auto-runs on `main` push or PR; isolated integration branch push alone does not establish CI status.

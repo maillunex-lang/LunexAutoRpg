@@ -195,3 +195,4 @@ Integration design: `docs/world/MAIN_WORLD_INTEGRATION.md`. No proprietary Era o
 - [~] MAIN-WORLD-001 stage 4 persistence: isolated SQLite close/reopen PASS for gate-watch unlock, chapter completion, XP and gold. Position persistence/network reconnect and multiplayer visibility pending.
 - [~] MAIN-WORLD-001 stage 4 two-client ENet zone visibility PASS: same-zone visible, cross-zone hidden, rejoin visible. Server-driven boundary positions isolate visibility; content and reconnect acceptance remain.
 - [~] MAIN-WORLD-001 stage 4: real ENet reconnect with same profile PASS (server + two sequential clients; quest unlock, chapter completion, XP and gold). Zone position persistence not implemented/verified; Android and CI remain outstanding.
+- [~] MAIN-WORLD-001 stage 5: Godot 4.7.2 Android debug APK export PASS (~59 MiB), signed. Manual Android acceptance and green GitHub Actions CI not verified.
