@@ -141,3 +141,6 @@
 
 2026-11-23: OWNER APPROVED GDD-08.12 PVP-0812 B, MODE-0812 B, BALANCE-0812 B, REWARD-0812 B, QUEUE-0812 B. See [GDD-08-12.md](GDD-08-12.md). @devbridgelunex memory saved. GH08-038..040 STUDY/isolated TEST ONLY, NO integration.
 2026-11-23: Drafted [GDD-08-13.md](GDD-08-13.md) dungeons/raids/PvE challenges. DUNGEON-0813, PARTY-0813, DIFFICULTY-0813, RAID-0813, LOCKOUT-0813 awaiting owner approval. GH08-041..043 found, not audited or integrated. No gameplay/deploy changes.
+
+2026-11-23: OWNER APPROVED GDD-08.13 DUNGEON-0813 B, PARTY-0813 B, DIFFICULTY-0813 B, RAID-0813 B, LOCKOUT-0813 B. See [GDD-08-13.md](GDD-08-13.md). @devbridgelunex memory saved. GH08-041..043 STUDY/isolated TEST only, NO integration.
+2026-11-23: Drafted [GDD-08-14.md](GDD-08-14.md) world events and exploration. EVENT-0814, EXPLORE-0814, MAP-0814, PARTICIPATE-0814, WORLDSTATE-0814 awaiting approval. GH08-044..045 discovered, not audited/integrated. No game/deploy changes.
