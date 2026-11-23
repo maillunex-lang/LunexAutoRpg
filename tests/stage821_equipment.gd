@@ -25,7 +25,7 @@ func run() -> void:
 		quit(1)
 		return
 	var state := store.read_profile(profile)
-	if state.inventory.size() != 1 or state.equipped_slots.get("amulet","") != "ash_guard_charm":
+	if state.inventory.size() != 1 or state.equipped_slots.get("accessory","") != "ash_guard_charm":
 		push_error("Inventory/equip not persisted")
 		quit(1)
 		return
