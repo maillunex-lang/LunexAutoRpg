@@ -90,6 +90,29 @@ func _selected_inventory_item() -> String:
 	var idx: int = indices[0]
 	return str(inventory[idx].get("item_id", "")) if idx >= 0 and idx < inventory.size() else ""
 
+static func item_display_name(item_id: String) -> String:
+	var definition := LunexItemCatalog.find(item_id)
+	return definition.display_name if definition != null else item_id
+
+static func slot_display_name(slot_id: String) -> String:
+	return {
+		"weapon": "Оружие",
+		"armor": "Броня",
+		"helmet": "Шлем",
+		"gloves": "Перчатки",
+		"boots": "Обувь",
+		"accessory": "Аксессуар"
+	}.get(slot_id, slot_id)
+
+static func rarity_display_name(rarity: int) -> String:
+	return {
+		1: "Обычный",
+		2: "Редкий",
+		3: "Эпический",
+		4: "Легендарный",
+		5: "Мифический"
+	}.get(rarity, "Неизвестный")
+
 func _refresh_inventory() -> void:
 	var list: ItemList = %InventoryItems
 	var selected_id := _selected_inventory_item()
@@ -99,7 +122,7 @@ func _refresh_inventory() -> void:
 		var item_id: String = str(row.get("item_id", ""))
 		var rarity: int = int(row.get("rarity", 1))
 		var level: int = int(row.get("upgrade_level", 0))
-		list.add_item("%s · %s · редк. %d · +%d" % [item_id, str(row.get("slot", "")), rarity, level])
+		list.add_item("%s · %s · %s · +%d" % [item_display_name(item_id), slot_display_name(str(row.get("slot", ""))), rarity_display_name(rarity), level])
 		if item_id == selected_id:
 			list.select(list.item_count - 1)
 	if list.item_count > 0 and list.get_selected_items().is_empty():
@@ -107,7 +130,7 @@ func _refresh_inventory() -> void:
 	var equipped: Dictionary = _state.get("equipped_slots", {})
 	var lines: PackedStringArray = []
 	for slot in LunexProgressStore.EQUIPMENT_SLOTS:
-		lines.append("%s: %s" % [slot, str(equipped.get(slot, "пусто"))])
+		lines.append("%s: %s" % [slot_display_name(slot), item_display_name(str(equipped[slot])) if equipped.has(slot) and not str(equipped[slot]).is_empty() else "пусто"])
 	%InventorySlots.text = "GS: %d · Золото: %d\n%s" % [int(_state.get("gear_score", 0)), int(_state.get("gold", 0)), " | ".join(lines)]
 	_refresh_inventory_selection()
 
@@ -124,7 +147,7 @@ func _refresh_inventory_selection() -> void:
 			var level: int = int(row.get("upgrade_level", 0))
 			var cost: int = (level + 1) * 50
 			var score: int = LunexProgressStore.gear_score_for_item(rarity, level)
-			%InventoryInfo.text = "%s | GS %d | улучшение: %d золота" % [item_id, score, cost]
+			%InventoryInfo.text = "%s | %s | %s | GS %d | улучшение: %d золота" % [item_display_name(item_id), slot_display_name(str(row.get("slot", ""))), rarity_display_name(rarity), score, cost]
 			%InventoryUpgrade.disabled = level >= 15 or int(_state.get("gold", 0)) < cost
 			%InventoryEquip.disabled = str(_state.get("equipped_slots", {}).get(str(row.get("slot", "")), "")) == item_id
 			return
