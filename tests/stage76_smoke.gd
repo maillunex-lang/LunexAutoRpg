@@ -31,6 +31,26 @@ func _run() -> void:
         return first._progress.get("chapter_quests", {}).has("first_steps")
     ):
         return
+    if not await _expect("journal shows five chapter entries and route is enabled", func() -> bool:
+        return first.progress_hud.get_node("%ChapterList").item_count == 5 and not first.progress_hud.get_node("%ChapterRoute").disabled
+    ):
+        return
+    second._request_quest_route.rpc_id(1, "first_steps")
+    await create_timer(0.3).timeout
+    if not await _expect("inactive profile cannot start a route", func() -> bool:
+        return not second.zone_hud.notice.visible
+    ):
+        return
+    first.progress_hud.get_node("%ChapterRoute").pressed.emit()
+    if not await _expect("active chapter starts server-controlled NPC navigation", func() -> bool:
+        return first.zone_hud.notice.visible and first.zone_hud.notice.text.contains("Автопуть")
+    ):
+        return
+    if not await _expect("server navigation moves the hero toward the quest NPC", func() -> bool:
+        var hero := first.players.get_node(str(first.multiplayer.get_unique_id())) as LunexNetworkPlayer
+        return hero.global_position.x > -1.7
+    ):
+        return
     if not await _expect("other profile has no first quest", func() -> bool:
         return not second._progress.get("chapter_quests", {}).has("first_steps")
     ):

@@ -18,6 +18,8 @@ var _standing_collision_layer: int
 
 var enemy: LunexTrainingEnemy
 var auto_enabled := false
+var quest_auto_enabled := false
+var quest_destination := Vector3.ZERO
 var attack_requested := false
 var attack_cooldown := 0.0
 
@@ -49,6 +51,7 @@ func accept_input(direction: Vector3) -> void:
 	input_time_left = 0.4
 	if desired_direction.length_squared() > 0.001:
 		auto_enabled = false
+		quest_auto_enabled = false
 
 func enter_zone(next_zone: int, arrival: Vector3) -> void:
 	zone_id = next_zone
@@ -60,13 +63,34 @@ func enter_zone(next_zone: int, arrival: Vector3) -> void:
 	desired_direction = Vector3.ZERO
 	input_time_left = 0.0
 	auto_enabled = false
+	quest_auto_enabled = false
 	attack_requested = false
 	server_moving = false
+
+func set_quest_destination(destination: Vector3) -> void:
+	if health <= 0:
+		return
+	auto_enabled = false
+	quest_auto_enabled = true
+	quest_destination = destination
+	navigation.target_position = destination
+
+func _quest_direction() -> Vector3:
+	if global_position.distance_to(quest_destination) <= 1.65:
+		quest_auto_enabled = false
+		return Vector3.ZERO
+	if navigation.is_navigation_finished():
+		quest_auto_enabled = false
+		return Vector3.ZERO
+	var step := navigation.get_next_path_position() - global_position
+	step.y = 0.0
+	return step.normalized()
 
 func set_target(target: LunexTrainingEnemy) -> void:
 	if enemy != target:
 		enemy = target
 		auto_enabled = false
+		quest_auto_enabled = false
 		attack_requested = false
 
 func set_auto(enabled: bool) -> void:
@@ -114,6 +138,7 @@ func take_counter_damage(damage: int) -> void:
 	if health == 0:
 		revival_left = revival_delay
 		auto_enabled = false
+		quest_auto_enabled = false
 		attack_requested = false
 		server_moving = false
 		desired_direction = Vector3.ZERO
@@ -147,6 +172,8 @@ func _physics_process(delta: float) -> void:
 		attack_cooldown = maxf(attack_cooldown - delta, 0.0)
 		if auto_enabled:
 			direction = _auto_direction()
+		elif quest_auto_enabled:
+			direction = _quest_direction()
 		if attack_requested:
 			attack_requested = false
 			if _can_attack():

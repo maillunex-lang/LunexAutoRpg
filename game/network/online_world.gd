@@ -70,6 +70,7 @@ func _ready() -> void:
 	combat.auto_requested.connect(func(enabled: bool) -> void: _request_auto.rpc_id(1, enabled, combat.target_index))
 	progress_hud.accept_requested.connect(func() -> void: _accept_quest.rpc_id(1, progress_hud.selected_quest))
 	progress_hud.equip_requested.connect(func() -> void: _equip_reward.rpc_id(1, progress_hud.selected_quest))
+	progress_hud.quest_route_requested.connect(func(quest_id: String) -> void: _request_quest_route.rpc_id(1, quest_id))
 	chat.message_requested.connect(func(message: String) -> void: _send_chat.rpc_id(1, message))
 	zone_hud.npc_requested.connect(func(npc_id: String) -> void: _request_npc.rpc_id(1, npc_id))
 	dialogue_window.quest_accept_requested.connect(func(quest_id: String) -> void: _chapter_accept.rpc_id(1, quest_id))
@@ -317,8 +318,35 @@ func _reject_login(message: String) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _receive_progress(state: Dictionary) -> void:
 	_progress = state
-	progress_hud.show_state(state, quest_rewards, level_two_experience)
+	progress_hud.show_state(state, quest_rewards, level_two_experience, chapter_quest_definitions)
 	dialogue_window.set_quest_state(state.get("chapter_quests", {}), chapter_quest_definitions)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_quest_route(quest_id: String) -> void:
+	var player := _sender_player()
+	if player == null or player.health <= 0 or quest_id.length() > 64:
+		return
+	var definition := _chapter_definition(quest_id)
+	if definition == null:
+		return
+	var profile: String = _profiles.get(player.peer_id, "")
+	if profile.is_empty() or not _store.is_chapter_active(profile, quest_id):
+		return
+	for candidate in npcs.get_children():
+		var npc := candidate as LunexNpcActor
+		if npc.npc_id != definition.objective_npc_id:
+			continue
+		if npc.zone_id == player.zone_id:
+			player.set_quest_destination(npc.global_position)
+			_quest_route_notice.rpc_id(player.peer_id, "Автопуть: " + npc.display_name)
+		else:
+			player.set_quest_destination(gates[player.zone_id].global_position)
+			_quest_route_notice.rpc_id(player.peer_id, "Автопуть до ворот. Переход в другую локацию вручную.")
+		return
+
+@rpc("authority", "call_remote", "reliable")
+func _quest_route_notice(message: String) -> void:
+	zone_hud.show_notice(message)
 
 func _chapter_definition(quest_id: String) -> LunexChapterQuestDefinition:
 	for definition in chapter_quest_definitions:

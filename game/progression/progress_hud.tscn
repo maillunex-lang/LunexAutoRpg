@@ -27,9 +27,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -205.0
-offset_top = -181.0
+offset_top = -255.0
 offset_right = 205.0
-offset_bottom = 181.0
+offset_bottom = 255.0
 
 [node name="Margin" type="MarginContainer" parent="Panel"]
 layout_mode = 2
@@ -80,6 +80,25 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 39)
 layout_mode = 2
 text = "Надеть"
+
+[node name="ChapterTitle" type="Label" parent="Panel/Margin/Fields"]
+layout_mode = 2
+text = "Сюжетные задания"
+
+[node name="ChapterList" type="ItemList" parent="Panel/Margin/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 112)
+
+[node name="ChapterDetail" type="Label" parent="Panel/Margin/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="ChapterRoute" type="Button" parent="Panel/Margin/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Автопуть к цели"
 
 [node name="Close" type="Button" parent="Panel/Margin/Fields"]
 unique_name_in_owner = true
