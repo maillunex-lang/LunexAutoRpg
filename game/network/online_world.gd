@@ -78,6 +78,10 @@ var _peer: ENetMultiplayerPeer
 var _player_name := ""
 var _local_player: LunexNetworkPlayer
 var _input_elapsed := 0.0
+var _tap_destination := Vector3.ZERO
+var _tap_active := false
+var _pvp_instances: Dictionary[int, bool] = {}
+var _dangerous_boss_phases: Dictionary[int, bool] = {}
 var _spawn_slots: Dictionary[int, int] = {}
 
 func _ready() -> void:
@@ -267,11 +271,41 @@ func _player_spawned(node: Node) -> void:
 func _remove_player(id: int) -> void:
 	_spawn_slots.erase(id)
 	_profiles.erase(id)
+	_pvp_instances.erase(id)
+	_dangerous_boss_phases.erase(id)
 	_chat_next_ms.erase(id)
 	_ability_engine.clear_actor(id)
 	var player := players.get_node_or_null(str(id))
 	if player != null:
 		player.queue_free()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_instance_valid(_local_player) or not _local_player.health > 0 or hud_editor.visible:
+		return
+	var screen_pos := Vector2.ZERO
+	if event is InputEventScreenTouch and event.pressed:
+		screen_pos = event.position
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		screen_pos = event.position
+	else:
+		return
+	var start := camera.project_ray_origin(screen_pos)
+	var end := start + camera.project_ray_normal(screen_pos) * 200.0
+	var query := PhysicsRayQueryParameters3D.create(start, end)
+	query.exclude = [_local_player.get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return
+	var point: Vector3 = hit.position
+	if point.distance_to(_local_player.global_position) > 50.0:
+		return
+	# Navigation only across a valid baked navmesh. No direct-line obstacle bypass.
+	var map := get_world_3d().navigation_map
+	var path := NavigationServer3D.map_get_path(map, _local_player.global_position, point, true)
+	if path.size() < 2 or path[path.size() - 1].distance_to(point) > 2.0:
+		return
+	_tap_destination = point
+	_tap_active = true
 
 func _physics_process(delta: float) -> void:
 	if _metrics_enabled:
@@ -298,6 +332,19 @@ func _physics_process(delta: float) -> void:
 		return
 	_input_elapsed = fmod(_input_elapsed, INPUT_INTERVAL)
 	var direction := LunexPlayer.camera_relative_direction(joystick.output, camera)
+	if LunexTapNavigation.should_cancel_for_manual(joystick.output):
+		_tap_active = false
+	elif _tap_active:
+		var path := NavigationServer3D.map_get_path(get_world_3d().navigation_map, _local_player.global_position, _tap_destination, true)
+		if path.size() < 2:
+			_tap_active = false
+		else:
+			var next_point: Vector3 = path[1]
+			var direction2 := LunexTapNavigation.input_direction(_local_player.global_position, next_point, joystick.output)
+			if direction2 == Vector2.ZERO:
+				_tap_active = false
+			else:
+				direction = Vector3(direction2.x, 0.0, direction2.y)
 	_move.rpc_id(1, Vector2(direction.x, direction.z))
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
@@ -409,6 +456,10 @@ func _skill_feedback(message: String, energy: float, cooldown_ms: int = 0) -> vo
 func _request_auto(enabled: bool, index: int) -> void:
 	var player := _sender_player()
 	if player != null and index >= 0 and index < targets.size() and targets[index].zone_id == player.zone_id:
+		var allowed := LunexAutoSafety.allow_auto(player.health > 0, bool(_pvp_instances.get(player.peer_id, false)), bool(_dangerous_boss_phases.get(player.peer_id, false)), targets[index].health > 0)
+		if enabled and not allowed:
+			player.set_auto(false)
+			return
 		player.set_target(targets[index])
 		player.set_auto(enabled)
 
