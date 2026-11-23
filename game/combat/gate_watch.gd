@@ -27,6 +27,7 @@ var _threat: Dictionary[int, float] = {}
 
 func _ready() -> void:
 	super._ready()
+	ai_basic_attack = false
 	warning.scale = Vector3(counter_radius, 1.0, counter_radius)
 	hit_landed.connect(_register_threat)
 	defeated.connect(_reset_counter)
@@ -71,6 +72,7 @@ func _has_nearby_player(radius: float) -> bool:
 	return false
 
 func _physics_process(delta: float) -> void:
+	super._physics_process(delta)
 	if not multiplayer.is_server() or players == null:
 		return
 	if health <= 0:
@@ -103,7 +105,8 @@ func _physics_process(delta: float) -> void:
 		_time_left = counter_cooldown
 		counter_sequence += 1
 		for player in victims:
-			player.take_counter_damage(counter_damage)
+			var damage := ceili(float(counter_damage) * definition.elite_damage_multiplier) if is_elite and definition != null else counter_damage
+			player.take_counter_damage(damage)
 	elif not victims.is_empty():
 		telegraph_active = true
 		brain_state = BrainState.WINDUP

@@ -158,6 +158,7 @@ func _start_server(args: PackedStringArray) -> void:
 	grove_wraith.players = players
 	ruin_sentinel.players = players
 	for target in targets:
+		target.ai_players = players
 		(target.get_node("State") as MultiplayerSynchronizer).public_visibility = false
 		target.hit_landed.connect(_record_hit.bind(target.target_id))
 		target.defeated.connect(_reward_contributors.bind(target.target_id))

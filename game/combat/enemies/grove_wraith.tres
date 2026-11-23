@@ -17,3 +17,5 @@ patrol_speed = 1.6
 chase_speed = 2.6
 damage_threat_factor = 1.0
 healing_threat_factor = 0.7
+patrol_radius = 1.5
+elite_spawn_chance = 0.2
