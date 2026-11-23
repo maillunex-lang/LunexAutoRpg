@@ -105,3 +105,5 @@
 2026-11-23: [GDD-08-03.md](GDD-08-03.md) drafted for approval: chapter 1 'Звон из тумана', proposed 10 main quests, side quests, NPCs, events, quest persistence architecture, and GitHub STUDY/COMPAT candidates GH08-010..013. QUEST-083/EVENT-083/CUTSCENE-083/PARTY-083 are NOT approved. GDD-08 implementation blocked pending stage 7.7.8 manual acceptance.
 
 2026-11-23: Owner established **Era of Celestials** (https://play.google.com/store/apps/details?id=com.gtarcade.eoa) as LunexAutoRpg's primary gameplay/UX reference. See [REFERENCE-ERA-OF-CELESTIALS.md](REFERENCE-ERA-OF-CELESTIALS.md). This does NOT authorize copying assets or implementing additional systems. Stage 7.7.8 manual acceptance still pending; GDD-08 design only.
+
+2026-11-23: GDD-08.3 read-only code audit / Era of Celestials pacing review documented in [GDD-08-03-IMPLEMENTATION-REVIEW.md](GDD-08-03-IMPLEMENTATION-REVIEW.md). GitHub candidates GH08-014 (cutscenes) and GH08-015 (archived sample) added to research; no candidate integrated. QUEST-083 A, EVENT-083 B, CUTSCENE-083 B, PARTY-083 B remain recommendations awaiting owner approval. Stage 7.7.8 manual acceptance PENDING.
