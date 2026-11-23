@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3]
+[gd_scene load_steps=30 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -42,6 +42,8 @@
 [ext_resource type="Resource" path="res://game/progression/chapter_5.tres" id="27"]
 
 [ext_resource type="PackedScene" path="res://game/combat/classes/class_selection.tscn" id="28"]
+
+[ext_resource type="PackedScene" path="res://game/mobile/hud_layout_editor.tscn" id="29"]
 
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
@@ -147,3 +149,23 @@ one_shot = true
 
 [node name="ClassSelection" parent="HUD" instance=ExtResource("28")]
 visible = false
+
+[node name="HudLayoutEditor" parent="HUD" instance=ExtResource("29")]
+visible = false
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -155.0
+offset_top = -95.0
+offset_right = 155.0
+offset_bottom = 95.0
+
+[node name="HudSettingsButton" type="Button" parent="HUD"]
+visible = false
+anchor_right = 1.0
+offset_left = -110.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = 46.0
+text = "HUD"

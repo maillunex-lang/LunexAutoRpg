@@ -32,6 +32,18 @@ func _run() -> void:
 	editor.reset_to_preset()
 	if not require_condition(is_equal_approx(editor.action_slider.value, 1.0), "Preset reset restores scale"): return
 	if not require_condition(editor.has_node("Panel/Options/JoystickScale"), "Godot-editor editable UI scene"): return
+	editor.save_path = "user://stage815_test_layout.cfg"
+	editor.action_slider.value = 1.3
+	if not require_condition(editor.save_layout(), "HUD layout saved to user profile"): return
+	editor.action_slider.set_value_no_signal(0.7)
+	if not require_condition(editor.load_layout(), "HUD layout restored from user profile"): return
+	if not require_condition(is_equal_approx(editor.action_slider.value, 1.3), "Persisted scale restored"): return
+	var world: PackedScene = load("res://game/network/online_world.tscn")
+	if not require_condition(world != null, "Main world with editable HUD layout loads"): return
+	var world_node: Node = world.instantiate()
+	if not require_condition(world_node.has_node("HUD/HudSettingsButton"), "Settings button present in main scene"): return
+	if not require_condition(world_node.has_node("HUD/HudLayoutEditor"), "Layout editor present in main scene"): return
+	world_node.free()
 	editor.queue_free()
 	print("STAGE815_TOTAL=", checks)
 	quit()

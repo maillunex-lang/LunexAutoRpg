@@ -38,6 +38,8 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @onready var chat: LunexZoneChat = $HUD/ZoneChat
 @onready var progress_hud: LunexProgressHUD = $HUD/ProgressHUD
 @onready var class_selection: LunexClassSelection = $HUD/ClassSelection
+@onready var hud_editor: LunexHudLayoutEditor = $HUD/HudLayoutEditor
+@onready var hud_settings: Button = $HUD/HudSettingsButton
 
 var _metrics_enabled := false
 var _metrics_elapsed := 0.0
@@ -91,6 +93,9 @@ func _ready() -> void:
 		_start_server(args)
 		return
 
+	hud_settings.pressed.connect(func() -> void: hud_editor.visible = not hud_editor.visible)
+	hud_editor.layout_changed.connect(_apply_hud_layout)
+	_apply_hud_layout(hud_editor.action_slider.value, hud_editor.joystick_slider.value)
 	class_selection.class_requested.connect(func(class_id: String) -> void: _choose_class.rpc_id(1, class_id))
 	combat.skill_requested.connect(func(ability_id: String) -> void: _request_skill.rpc_id(1, ability_id, combat.target_index))
 	combat.attack_requested.connect(func() -> void: _request_attack.rpc_id(1, combat.target_index))
@@ -167,6 +172,8 @@ func _close_client(message: String) -> void:
 	_local_player = null
 	camera.follow(null)
 	joystick.hide()
+	hud_editor.hide()
+	hud_settings.hide()
 	combat.hide()
 	combat.reset_skill_ui()
 	combat.selected = false
@@ -249,6 +256,7 @@ func _player_spawned(node: Node) -> void:
 	camera.follow(player)
 	diagnostics.start(_peer.get_peer(1))
 	joystick.show()
+	hud_settings.show()
 	chat.show()
 	progress_hud.show()
 	combat.show()
@@ -316,7 +324,7 @@ func _request_attack(index: int) -> void:
 @rpc("any_peer", "call_remote", "reliable")
 func _request_skill(ability_id: String, target_index: int) -> void:
 	var player := _sender_player()
-	if player == null or player.health <= 0 or ability_id.length() > 40:
+	if player == null or player.health <= 0 or ability_id.is_empty() or ability_id.length() > 40:
 		return
 	var profile: String = _profiles.get(player.peer_id, "")
 	if profile.is_empty():
@@ -328,7 +336,7 @@ func _request_skill(ability_id: String, target_index: int) -> void:
 	if class_id != player.class_id or not ABILITY_CATALOG.has(ability_id):
 		return
 	var skill: LunexAbilityDefinition = load(ABILITY_CATALOG[ability_id])
-	if skill == null or skill.class_id != class_id:
+	if skill == null or not skill.is_valid() or skill.class_id != class_id:
 		return
 	var level := 2 if int(state.get("experience", 0)) >= level_two_experience else 1
 	var learned := PackedStringArray()
@@ -349,7 +357,7 @@ func _request_skill(ability_id: String, target_index: int) -> void:
 			return
 	var target_position := target.global_position if target != null else ally.global_position
 	var same_zone := player.zone_id == target.zone_id if target != null else player.zone_id == ally.zone_id
-	var visible := player.has_line_of_sight(target_position) if target != null else true
+	var visible := player.has_line_of_sight(target_position) if target != null else (player.has_line_of_sight(target_position) if ally != player else true)
 	if target != null:
 		visible = visible and target.health > 0
 	var result := _ability_engine.try_cast(player.peer_id, class_id, level, learned, int(player.ability_energy), ability_id, player.global_position, target_position, skill.target_kind, same_zone, visible, Time.get_ticks_msec())
@@ -724,3 +732,10 @@ func _show_zone(zone_id: int) -> void:
 	zone_hud.location.text = courtyard_name if zone_id == 0 else passage_name
 	zone_hud.travel.text = "Войти в проход" if zone_id == 0 else "Вернуться во двор"
 	zone_hud.notice.hide()
+
+# Only client-side presentation; authoritative movement/combat remains on the server.
+func _apply_hud_layout(action_scale: float, joystick_scale: float) -> void:
+	if not is_instance_valid(combat) or not is_instance_valid(joystick):
+		return
+	combat.get_node("Actions").scale = Vector2.ONE * clampf(action_scale, 0.65, 1.35)
+	joystick.scale = Vector2.ONE * clampf(joystick_scale, 0.65, 1.35)
