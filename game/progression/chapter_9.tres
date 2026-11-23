@@ -10,7 +10,8 @@ npc_id = "ord"
 objective_npc_id = "keeper"
 objective_goal = 1
 title = "Следы тумана"
-objective_description = "Победи врага: Доставь весть Хранителю руин"
+objective_description = "Победи Туманного охотника в Каменном проходе"
+story_intro = "Туманный охотник мешает пройти к разрушенной часовне. Победи его, чтобы открыть путь к следам колокола."
 
 reward_experience = 55
 objective_enemy_id = "mist_hunter"

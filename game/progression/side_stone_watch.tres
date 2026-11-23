@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="LunexChapterQuestDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://game/progression/chapter_quest_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+quest_id = "side_stone_watch"
+prerequisite_id = "passage_report"
+npc_id = "scout"
+objective_npc_id = ""
+objective_enemy_id = "stone_guard"
+title = "Каменная стража"
+objective_description = "Победи Скелета-стража"
+story_intro = "Разведчик заметил дозор старого гарнизона."
+objective_goal = 1
+reward_experience = 40
+reward_gold = 60

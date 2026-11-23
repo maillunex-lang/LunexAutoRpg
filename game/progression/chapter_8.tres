@@ -11,5 +11,6 @@ objective_npc_id = "ord"
 objective_goal = 1
 title = "Сообщение дозорной"
 objective_description = "Найди Орда в Пепельной роще"
+story_intro = "Орд, лесной дозорный, заметил исчезновение путевых меток. Найди его и узнай, откуда тянется холодный туман."
 
 reward_experience = 50

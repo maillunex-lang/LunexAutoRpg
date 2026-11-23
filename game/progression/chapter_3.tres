@@ -11,5 +11,6 @@ objective_npc_id = "quartermaster"
 objective_goal = 1
 title = "Поручение Наставника"
 objective_description = "Уточни у Кладовщика состояние запасов"
+story_intro = "Проверка завершена. Возвращайся к кладовщику: он подготовил для тебя сведения о дороге, по которой исчезли караваны."
 
 reward_experience = 25

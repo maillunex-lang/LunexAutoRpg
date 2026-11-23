@@ -6,6 +6,7 @@ signal equip_requested
 signal quest_route_requested(quest_id: String)
 signal chapter_equip_requested(quest_id: String)
 signal upgrade_requested(item_id: String)
+signal inventory_equip_requested(item_id: String)
 
 var selected_quest := 0
 var _state: Dictionary = {}
@@ -15,6 +16,22 @@ var _chapter_definitions: Array[LunexChapterQuestDefinition] = []
 
 func _ready() -> void:
 	%Progress.pressed.connect(func() -> void: %Panel.visible = not %Panel.visible)
+	%Inventory.pressed.connect(func() -> void:
+		%Panel.hide()
+		%InventoryPanel.visible = not %InventoryPanel.visible
+	)
+	%InventoryClose.pressed.connect(func() -> void: %InventoryPanel.hide())
+	%InventoryItems.item_selected.connect(func(_idx: int) -> void: _refresh_inventory_selection())
+	%InventoryEquip.pressed.connect(func() -> void:
+		var item_id := _selected_inventory_item()
+		if not item_id.is_empty():
+			inventory_equip_requested.emit(item_id)
+	)
+	%InventoryUpgrade.pressed.connect(func() -> void:
+		var item_id := _selected_inventory_item()
+		if not item_id.is_empty():
+			upgrade_requested.emit(item_id)
+	)
 	%Close.pressed.connect(func() -> void: %Panel.hide())
 	%Accept.pressed.connect(func() -> void: accept_requested.emit())
 	%Equip.pressed.connect(func() -> void: equip_requested.emit())
@@ -44,6 +61,8 @@ func _ready() -> void:
 
 func reset() -> void:
 	%Panel.hide()
+	%InventoryPanel.hide()
+	%Inventory.disabled = true
 	%Progress.disabled = true
 	selected_quest = 0
 	_state.clear()
@@ -54,12 +73,61 @@ func show_state(state: Dictionary, rewards: Array[LunexQuestReward], level_two_e
 	_chapter_definitions = chapters
 	_level_two_experience = level_two_experience
 	%Progress.disabled = false
+	%Inventory.disabled = false
 	%Chapters.clear()
 	for reward in rewards:
 		%Chapters.add_item(reward.quest_title)
 	%Chapters.select(selected_quest)
 	_refresh()
 	_refresh_chapters()
+	_refresh_inventory()
+
+func _selected_inventory_item() -> String:
+	var indices: PackedInt32Array = %InventoryItems.get_selected_items()
+	if indices.is_empty():
+		return ""
+	var inventory: Array = _state.get("inventory", [])
+	var idx: int = indices[0]
+	return str(inventory[idx].get("item_id", "")) if idx >= 0 and idx < inventory.size() else ""
+
+func _refresh_inventory() -> void:
+	var list: ItemList = %InventoryItems
+	var selected_id := _selected_inventory_item()
+	list.clear()
+	var inventory: Array = _state.get("inventory", [])
+	for row in inventory:
+		var item_id: String = str(row.get("item_id", ""))
+		var rarity: int = int(row.get("rarity", 1))
+		var level: int = int(row.get("upgrade_level", 0))
+		list.add_item("%s · %s · редк. %d · +%d" % [item_id, str(row.get("slot", "")), rarity, level])
+		if item_id == selected_id:
+			list.select(list.item_count - 1)
+	if list.item_count > 0 and list.get_selected_items().is_empty():
+		list.select(0)
+	var equipped: Dictionary = _state.get("equipped_slots", {})
+	var lines: PackedStringArray = []
+	for slot in LunexProgressStore.EQUIPMENT_SLOTS:
+		lines.append("%s: %s" % [slot, str(equipped.get(slot, "пусто"))])
+	%InventorySlots.text = "GS: %d · Золото: %d\n%s" % [int(_state.get("gear_score", 0)), int(_state.get("gold", 0)), " | ".join(lines)]
+	_refresh_inventory_selection()
+
+func _refresh_inventory_selection() -> void:
+	var item_id := _selected_inventory_item()
+	%InventoryEquip.disabled = item_id.is_empty()
+	%InventoryUpgrade.disabled = item_id.is_empty()
+	if item_id.is_empty():
+		%InventoryInfo.text = "Рюкзак пуст. Получай предметы за задания."
+		return
+	for row in _state.get("inventory", []):
+		if str(row.get("item_id", "")) == item_id:
+			var rarity: int = int(row.get("rarity", 1))
+			var level: int = int(row.get("upgrade_level", 0))
+			var cost: int = (level + 1) * 50
+			var score: int = LunexProgressStore.gear_score_for_item(rarity, level)
+			%InventoryInfo.text = "%s | GS %d | улучшение: %d золота" % [item_id, score, cost]
+			%InventoryUpgrade.disabled = level >= 15 or int(_state.get("gold", 0)) < cost
+			%InventoryEquip.disabled = str(_state.get("equipped_slots", {}).get(str(row.get("slot", "")), "")) == item_id
+			return
 
 func _refresh() -> void:
 	var reward := _rewards[selected_quest]
@@ -109,11 +177,12 @@ func _refresh_chapters() -> void:
 	var selected: LunexChapterQuestDefinition = _chapter_definitions[list.get_selected_items()[0]]
 	var state: Dictionary = states.get(selected.quest_id, {})
 	var status := int(state.get("state", 0))
-	%ChapterDetail.text = selected.objective_description + ("
-Завершено" if status == 2 else ("
-Выполняется" if status == 1 else "
-Не принято"))
-	%ChapterRoute.disabled = status != 1
+	var status_hint := "Завершено" if status == 2 else ("Выполняется" if status == 1 else "Не принято")
+	%ChapterDetail.text = (selected.story_intro + "\n\n" if not selected.story_intro.is_empty() else "") + selected.objective_description + "\n" + status_hint
+	var prerequisite_ready: bool = selected.prerequisite_id.is_empty() or int(states.get(selected.prerequisite_id, {}).get("state", 0)) == 2
+	var available: bool = status == 0 and prerequisite_ready
+	%ChapterRoute.disabled = status != 1 and not available
+	%ChapterRoute.text = "К персонажу за заданием" if available else "Автопуть к цели"
 	var reward: Dictionary = _state.get("quests", {}).get("chapter:" + selected.quest_id, {})
 	var owned: String = reward.get("item", "")
 	%ChapterEquip.disabled = owned.is_empty() or reward.get("equipped", "") == owned

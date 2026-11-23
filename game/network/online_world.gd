@@ -16,11 +16,13 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @export var mist_bell_name := "Колокол тумана"
 @export var quest_rewards: Array[LunexQuestReward]
 @export var chapter_quest_definitions: Array[LunexChapterQuestDefinition] = []
+@export var side_quest_definitions: Array[LunexChapterQuestDefinition] = []
 @export_range(1, 100000) var level_two_experience := 50
 
 @onready var players: Node3D = $Players
 @onready var npcs: Node3D = $NPCs
 @onready var dialogue_window: LunexDialogueWindow = $HUD/DialogueWindow
+@onready var story_cinematic: LunexStoryCinematic = $HUD/StoryCinematic
 @onready var spawner: MultiplayerSpawner = $PlayerSpawner
 @onready var camera: LunexFollowCamera = $FollowCamera
 @onready var joystick: LunexVirtualJoystick = $HUD/VirtualJoystick
@@ -84,6 +86,7 @@ var _chapter_hit_profiles: Dictionary[String, Dictionary] = {}
 var _chat_next_ms: Dictionary[int, int] = {}
 var _profile_token := ""
 var _progress: Dictionary = {}
+var _story_finale_seen := false
 var _peer: ENetMultiplayerPeer
 var _player_name := ""
 var _local_player: LunexNetworkPlayer
@@ -113,6 +116,7 @@ func _ready() -> void:
 	hud_editor.position_changed.connect(_apply_hud_positions)
 	progress_hud.upgrade_requested.connect(func(item_id: String) -> void: _upgrade_item.rpc_id(1, item_id))
 	progress_hud.chapter_equip_requested.connect(func(quest_id: String) -> void: _equip_chapter_reward.rpc_id(1, quest_id))
+	progress_hud.inventory_equip_requested.connect(func(item_id: String) -> void: _equip_inventory.rpc_id(1, item_id))
 	_apply_hud_layout(hud_editor.action_slider.value, hud_editor.joystick_slider.value)
 	_apply_hud_positions(hud_editor.action_offset, hud_editor.joystick_offset)
 	get_viewport().size_changed.connect(func() -> void: _apply_hud_positions(hud_editor.action_offset, hud_editor.joystick_offset))
@@ -158,6 +162,7 @@ func _start_server(args: PackedStringArray) -> void:
 	grove_wraith.players = players
 	ruin_sentinel.players = players
 	for target in targets:
+		target.ai_players = players
 		(target.get_node("State") as MultiplayerSynchronizer).public_visibility = false
 		target.hit_landed.connect(_record_hit.bind(target.target_id))
 		target.defeated.connect(_reward_contributors.bind(target.target_id))
@@ -213,6 +218,8 @@ func _close_client(message: String) -> void:
 	progress_hud.reset()
 	class_selection.hide()
 	_progress.clear()
+	_story_finale_seen = false
+	story_cinematic.hide()
 	screen.show_idle(message)
 	if _peer != null:
 		var closing := _peer
@@ -447,7 +454,13 @@ func _request_skill(ability_id: String, target_index: int) -> void:
 		target.take_hit(int(result.magnitude), player.peer_id)
 		player.attack_sequence += 1
 	elif result.effect_kind == "heal":
+		var hp_before := ally.health
 		ally.heal(int(result.magnitude))
+		var effective_heal: float = float(maxi(0, ally.health - hp_before))
+		if effective_heal > 0.0:
+			for candidate in targets:
+				if candidate is LunexGateWatch and candidate.zone_id == player.zone_id:
+					(candidate as LunexGateWatch).add_support_threat(player.peer_id, effective_heal)
 	elif result.effect_kind == "status":
 		if skill.status_id == "shield":
 			ally.apply_shield(int(result.magnitude), float(skill.status_duration))
@@ -533,9 +546,16 @@ func _reject_login(message: String) -> void:
 
 @rpc("authority", "call_remote", "reliable")
 func _receive_progress(state: Dictionary) -> void:
+	var was_complete := int(_progress.get("chapter_quests", {}).get("bell_trial", {}).get("state", 0)) == LunexProgressStore.Quest.COMPLETE
+	var is_complete := int(state.get("chapter_quests", {}).get("bell_trial", {}).get("state", 0)) == LunexProgressStore.Quest.COMPLETE
+	var first_progress_snapshot := _progress.is_empty()
 	_progress = state
-	progress_hud.show_state(state, quest_rewards, level_two_experience, chapter_quest_definitions)
-	dialogue_window.set_quest_state(state.get("chapter_quests", {}), chapter_quest_definitions)
+	# Reconnecting into a completed story must not replay the final cinematic.
+	if is_complete and not was_complete and not first_progress_snapshot and not _story_finale_seen:
+		_story_finale_seen = true
+		story_cinematic.begin()
+	progress_hud.show_state(state, quest_rewards, level_two_experience, _all_chapter_definitions())
+	dialogue_window.set_quest_state(state.get("chapter_quests", {}), _all_chapter_definitions())
 	class_selection.show_state(state)
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -557,6 +577,29 @@ func _class_changed(class_id: String, player_id: int) -> void:
 	if player != null:
 		player.update_class(class_id)
 
+func _all_chapter_definitions() -> Array[LunexChapterQuestDefinition]:
+	var result: Array[LunexChapterQuestDefinition] = chapter_quest_definitions.duplicate()
+	result.append_array(side_quest_definitions)
+	return result
+
+func _chapter_available(profile: String, definition: LunexChapterQuestDefinition) -> bool:
+	if definition == null or profile.is_empty():
+		return false
+	var state := _store.read_profile(profile)
+	if state.is_empty():
+		return false
+	var chapters: Dictionary = state.get("chapter_quests", {})
+	if chapters.has(definition.quest_id):
+		return false
+	return definition.prerequisite_id.is_empty() or int(chapters.get(definition.prerequisite_id, {}).get("state", 0)) == LunexProgressStore.Quest.COMPLETE
+
+func _chapter_giver(definition: LunexChapterQuestDefinition) -> LunexNpcActor:
+	for candidate in npcs.get_children():
+		var npc := candidate as LunexNpcActor
+		if npc.npc_id == definition.npc_id:
+			return npc
+	return null
+
 func _quest_goal_zone(definition: LunexChapterQuestDefinition) -> int:
 	if not definition.objective_enemy_id.is_empty():
 		for target in targets:
@@ -572,11 +615,16 @@ func _quest_goal_zone(definition: LunexChapterQuestDefinition) -> int:
 func _advance_quest_routes() -> void:
 	for peer_id in _quest_routes.keys():
 		var player := players.get_node_or_null(str(peer_id)) as LunexNetworkPlayer
-		var definition := _chapter_definition(_quest_routes[peer_id])
-		if player == null or definition == null or player.health <= 0 or not _profiles.has(peer_id) or not _store.is_chapter_active(_profiles[peer_id], definition.quest_id):
+		var route_key: String = _quest_routes[peer_id]
+		var to_giver := route_key.begins_with("giver:")
+		var definition := _chapter_definition(route_key.trim_prefix("giver:") if to_giver else route_key)
+		var profile: String = _profiles.get(peer_id, "")
+		var eligible := _chapter_available(profile, definition) if to_giver else (definition != null and _store.is_chapter_active(profile, definition.quest_id))
+		if player == null or definition == null or player.health <= 0 or profile.is_empty() or not eligible:
 			_quest_routes.erase(peer_id)
 			continue
-		var goal_zone := _quest_goal_zone(definition)
+		var giver := _chapter_giver(definition) if to_giver else null
+		var goal_zone: int = giver.zone_id if giver != null else _quest_goal_zone(definition)
 		if goal_zone < 0 or goal_zone == player.zone_id:
 			_quest_routes.erase(peer_id)
 			continue
@@ -603,7 +651,10 @@ func _advance_quest_routes() -> void:
 		_update_zone_visibility(player)
 		if next == goal_zone:
 			_quest_routes.erase(peer_id)
-			if not definition.objective_enemy_id.is_empty():
+			if to_giver and giver != null:
+				player.set_quest_destination(giver.global_position)
+				_quest_route_notice.rpc_id(peer_id, "Автопуть к персонажу: " + giver.display_name)
+			elif not definition.objective_enemy_id.is_empty():
 				for target in targets:
 					if target.target_id == definition.objective_enemy_id:
 						player.set_quest_destination(target.global_position)
@@ -627,9 +678,24 @@ func _request_quest_route(quest_id: String) -> void:
 	if definition == null:
 		return
 	var profile: String = _profiles.get(player.peer_id, "")
-	if profile.is_empty() or not _store.is_chapter_active(profile, quest_id):
+	var is_active := not profile.is_empty() and _store.is_chapter_active(profile, quest_id)
+	var is_available := not is_active and _chapter_available(profile, definition)
+	if not is_active and not is_available:
 		return
 	_quest_routes.erase(player.peer_id)
+	if is_available:
+		var giver := _chapter_giver(definition)
+		if giver == null:
+			return
+		if giver.zone_id == player.zone_id:
+			player.set_quest_destination(giver.global_position)
+			_quest_route_notice.rpc_id(player.peer_id, "Следующее задание у: " + giver.display_name)
+		else:
+			var gate := back_gates[player.zone_id] if giver.zone_id < player.zone_id else gates[player.zone_id]
+			player.set_quest_destination(gate.global_position)
+			_quest_routes[player.peer_id] = "giver:" + quest_id
+			_quest_route_notice.rpc_id(player.peer_id, "Автопуть к персонажу через ворота.")
+		return
 	var goal_zone := _quest_goal_zone(definition)
 	if goal_zone >= 0 and goal_zone != player.zone_id:
 		_quest_routes[player.peer_id] = quest_id
@@ -663,7 +729,7 @@ func _quest_route_notice(message: String) -> void:
 	zone_hud.show_notice(message)
 
 func _chapter_definition(quest_id: String) -> LunexChapterQuestDefinition:
-	for definition in chapter_quest_definitions:
+	for definition in _all_chapter_definitions():
 		if definition != null and definition.quest_id == quest_id:
 			return definition
 	return null
@@ -689,7 +755,7 @@ func _chapter_npc_objective(peer_id: int, npc_id: String) -> void:
 	var profile: String = _profiles.get(peer_id, "")
 	if profile.is_empty():
 		return
-	for definition in chapter_quest_definitions:
+	for definition in _all_chapter_definitions():
 		if not definition.objective_enemy_id.is_empty() or definition.objective_npc_id != npc_id:
 			continue
 		if not _store.is_chapter_active(profile, definition.quest_id):
@@ -757,6 +823,15 @@ func _upgrade_item(item_id: String) -> void:
 		_publish_progress(player.peer_id, profile)
 
 @rpc("any_peer", "call_remote", "reliable")
+func _equip_inventory(item_id: String) -> void:
+	var player := _sender_player()
+	if player == null or player.health <= 0 or item_id.length() > 64:
+		return
+	var profile: String = _profiles.get(player.peer_id, "")
+	if not profile.is_empty() and _store.equip_inventory_item(profile, item_id):
+		_publish_progress(player.peer_id, profile)
+
+@rpc("any_peer", "call_remote", "reliable")
 func _equip_chapter_reward(quest_id: String) -> void:
 	var player := _sender_player()
 	var definition := _chapter_definition(quest_id)
@@ -778,7 +853,7 @@ func _record_hit(peer_id: int, target_id: String) -> void:
 	if multiplayer.is_server():
 		var chapter_profile: String = _profiles.get(peer_id, "")
 		if not chapter_profile.is_empty():
-			for chapter_def in chapter_quest_definitions:
+			for chapter_def in _all_chapter_definitions():
 				if chapter_def.objective_enemy_id == target_id and _store.is_chapter_active(chapter_profile, chapter_def.quest_id):
 					var hits: Dictionary = _chapter_hit_profiles.get_or_add(target_id, {})
 					hits[chapter_profile] = true
@@ -796,7 +871,7 @@ func _reward_contributors(target_id: String) -> void:
 	if multiplayer.is_server():
 		var chapter_hits: Dictionary = _chapter_hit_profiles.get(target_id, {})
 		_chapter_hit_profiles.erase(target_id)
-		for chapter_def in chapter_quest_definitions:
+		for chapter_def in _all_chapter_definitions():
 			if chapter_def.objective_enemy_id != target_id:
 				continue
 			for profile_id: String in chapter_hits:

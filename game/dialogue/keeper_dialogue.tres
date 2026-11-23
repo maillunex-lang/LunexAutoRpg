@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="LunexNpcDialogueDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://game/dialogue/npc_dialogue_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+npc_id = "keeper"
+dialogue_text = "~ start\nХранитель: Эта часовня была построена, чтобы заглушить колокол. Теперь её камни сами повторяют звон.\n- Можно остановить проклятие?\n\tХранитель: Страж склепа держит первую печать. Придётся встретиться с ним лицом к лицу.\n- Что ждёт внутри?\n\tХранитель: Не стой в круге удара, когда земля вспыхнет.\n"

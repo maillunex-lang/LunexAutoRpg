@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="LunexNpcDialogueDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://game/dialogue/npc_dialogue_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+npc_id = "scout"
+dialogue_text = "~ start\nРазведчик: На дороге я видел пустые повозки. Между колёсами выросли чёрные цветы.\n- Есть опасность?\n\tРазведчик: Скелеты-стражи. А за ними охотится что-то гораздо быстрее.\n- Передам в лагерь\n\tРазведчик: Не забудь предупредить Наставника.\n"

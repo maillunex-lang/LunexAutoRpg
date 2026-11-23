@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="LunexNpcDialogueDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://game/dialogue/npc_dialogue_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+npc_id = "quartermaster"
+dialogue_text = "~ start\nКладовщик: Вчера у нас украли последние мешки с зерном. По следам остался только пепел.\n- Нужна помощь?\n\tКладовщик: Наставник знает, кто охраняет путь. Но без припасов никто не дойдёт.\n- Есть снаряжение?\n\tКладовщик: Заработай его своими делами. На пустые обещания у меня нет золота.\n"

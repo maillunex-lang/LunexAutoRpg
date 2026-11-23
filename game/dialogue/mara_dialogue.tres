@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="LunexNpcDialogueDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://game/dialogue/npc_dialogue_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+npc_id = "mara"
+dialogue_text = "~ start\nМара: Скитальцы бродят у самого лагеря. Они не приходят сюда сами по себе.\n- Кто их привёл?\n\tМара: Каждую ночь звон доносится из тумана, и нежить делает шаг ближе.\n- Как помочь?\n\tМара: Отгони скитальцев и вернись к оставшимся в живых.\n"

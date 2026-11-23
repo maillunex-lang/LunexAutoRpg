@@ -10,7 +10,8 @@ npc_id = "mentor"
 objective_npc_id = "mara"
 objective_goal = 1
 title = "Пепельное предупреждение"
-objective_description = "Победи врага: Поговори с Марой в лагере"
+objective_description = "Победи Пепельного скитальца возле лагеря"
+story_intro = "Мара заметила у лагеря пепельного скитальца. Его нельзя подпускать к последним запасам. Останови нежить."
 
 reward_experience = 40
 objective_enemy_id = "ash_wanderer"

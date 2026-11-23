@@ -25,8 +25,24 @@ func open(path: String) -> bool:
 		and _db.query("CREATE TABLE IF NOT EXISTS equipment_items (profile TEXT NOT NULL, item_id TEXT NOT NULL, slot TEXT NOT NULL, rarity INTEGER NOT NULL DEFAULT 1, upgrade_level INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(profile, item_id), FOREIGN KEY(profile) REFERENCES profiles(id))")
 		and _db.query("CREATE TABLE IF NOT EXISTS equipped_slots (profile TEXT NOT NULL, slot TEXT NOT NULL, item_id TEXT NOT NULL, PRIMARY KEY(profile, slot), FOREIGN KEY(profile) REFERENCES profiles(id))")
 		and _db.query("CREATE TABLE IF NOT EXISTS chapter_quests (profile TEXT NOT NULL, quest_id TEXT NOT NULL, state INTEGER NOT NULL DEFAULT 0, objective_count INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(profile, quest_id), FOREIGN KEY(profile) REFERENCES profiles(id))")
+		and _migrate_equipment_slots()
 		and _db.query("INSERT OR IGNORE INTO quest_progress SELECT p.id, 'training', p.quest, COALESCE(r.item, ''), p.equipped FROM profiles p LEFT JOIN training_rewards r ON r.profile = p.id WHERE p.quest > 0 OR r.item IS NOT NULL")
 	)
+
+# Legacy equipment used ring/amulet slots. Preserve every owned item and prefer
+# an already-equipped canonical accessory when an old profile has both variants.
+func _migrate_equipment_slots() -> bool:
+	if not _db.query("BEGIN IMMEDIATE"):
+		return false
+	var ok: bool = _db.query("UPDATE equipment_items SET slot = 'accessory' WHERE slot IN ('ring', 'amulet')")
+	if ok:
+		ok = _db.query("INSERT OR IGNORE INTO equipped_slots (profile, slot, item_id) SELECT profile, 'accessory', item_id FROM equipped_slots WHERE slot IN ('amulet', 'ring') ORDER BY CASE slot WHEN 'amulet' THEN 0 ELSE 1 END")
+	if ok:
+		ok = _db.query("DELETE FROM equipped_slots WHERE slot IN ('ring', 'amulet')")
+	if ok and _db.query("COMMIT"):
+		return true
+	_db.query("ROLLBACK")
+	return false
 
 # Migration is atomic and repeatable. Every pre-existing character is assigned warrior.
 func _migrate_classes() -> bool:
@@ -184,13 +200,14 @@ func is_chapter_active(profile: String, quest_id: String) -> bool:
 		"SELECT 1 FROM chapter_quests WHERE profile = ? AND quest_id = ? AND state = 1",
 		[profile, quest_id]) and not _db.query_result.is_empty()
 
-const EQUIPMENT_SLOTS := ["weapon", "armor", "helmet", "boots", "ring", "amulet"]
+const EQUIPMENT_SLOTS := ["weapon", "armor", "helmet", "gloves", "boots", "accessory"]
 
 static func equipment_slot_for_item(item_id: String) -> String:
-	if item_id.ends_with("ring"):
-		return "ring"
-	if item_id.ends_with("relic") or item_id.ends_with("charm") or item_id.ends_with("emblem"):
-		return "amulet"
+	for slot in EQUIPMENT_SLOTS:
+		if item_id.ends_with("_" + slot):
+			return slot
+	if item_id.ends_with("ring") or item_id.ends_with("relic") or item_id.ends_with("charm") or item_id.ends_with("emblem"):
+		return "accessory"
 	return "weapon"
 
 func equip_inventory_item(profile: String, item_id: String) -> bool:
