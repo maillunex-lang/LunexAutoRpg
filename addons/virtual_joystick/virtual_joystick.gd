@@ -106,6 +106,10 @@ func _move_tip(new_position: Vector2) -> void:
 	_tip.global_position = new_position - _tip.pivot_offset * _base.get_global_transform_with_canvas().get_scale()
 
 func _is_point_inside_joystick_area(point: Vector2) -> bool:
+	# Floating mode accepts touch anywhere in the left half, not only the tiny 144px base.
+	if joystick_mode == Joystick_mode.DYNAMIC or joystick_mode == Joystick_mode.FOLLOWING:
+		var rect := get_viewport().get_visible_rect()
+		return point.x >= rect.position.x and point.x < rect.position.x + rect.size.x * 0.5 and point.y >= rect.position.y and point.y < rect.end.y
 	var x: bool = point.x >= global_position.x and point.x <= global_position.x + (size.x * get_global_transform_with_canvas().get_scale().x)
 	var y: bool = point.y >= global_position.y and point.y <= global_position.y + (size.y * get_global_transform_with_canvas().get_scale().y)
 	return x and y
