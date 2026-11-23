@@ -3,6 +3,8 @@ extends Control
 
 signal attack_requested
 signal auto_requested(enabled: bool)
+signal skill_requested(ability_id: String)
+var _skill_ids := ["", ""]
 
 var zone_id := 0
 var selected := false
@@ -13,6 +15,8 @@ func _ready() -> void:
 	%Target.pressed.connect(_cycle_target)
 	%Attack.pressed.connect(func() -> void: attack_requested.emit())
 	%Auto.toggled.connect(func(enabled: bool) -> void: auto_requested.emit(enabled))
+	%SkillOne.pressed.connect(func() -> void: skill_requested.emit(_skill_ids[0]))
+	%SkillTwo.pressed.connect(func() -> void: skill_requested.emit(_skill_ids[1]))
 
 func refresh(player: LunexNetworkPlayer) -> void:
 	var auto_active := player.auto_enabled
@@ -27,6 +31,26 @@ func refresh(player: LunexNetworkPlayer) -> void:
 	%Auto.disabled = (not alive or not selected or target.health <= 0) and not auto_active
 	%Auto.set_pressed_no_signal(auto_active)
 	%Auto.text = "Стоп" if auto_active else "Авто"
+
+func refresh_skills(class_id: String, experience: int, energy: float) -> void:
+	var ids := ["warrior_strike", "warrior_shield"] if class_id == "warrior" else ["mage_bolt", "mage_fireball"] if class_id == "mage" else ["", ""]
+	_skill_ids = ids
+	var level := 2 if experience >= 50 else 1
+	for index in range(2):
+		var button: Button = %SkillOne if index == 0 else %SkillTwo
+		if ids[index].is_empty():
+			button.hide()
+			continue
+		var skill: LunexAbilityDefinition = load("res://game/combat/abilities/" + ids[index] + ".tres")
+		button.show()
+		button.text = {"warrior_strike": "Мощный удар", "warrior_shield": "Щит", "mage_bolt": "Магический снаряд", "mage_fireball": "Огненный шар"}.get(ids[index], ids[index])
+		button.disabled = skill == null or skill.unlock_level > level or energy < skill.resource_cost
+		if skill != null and skill.unlock_level > level:
+			button.text += " (ур. %d)" % skill.unlock_level
+	%Energy.text = "Энергия: %d / 100" % int(energy)
+
+func show_skill_feedback(message: String) -> void:
+	%SkillNotice.text = "Навык: " + message
 
 func enter_zone(next_zone: int, first_target: int) -> void:
 	zone_id = next_zone

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="LunexAbilityDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/abilities/ability_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ability_id = "mage_fireball"
+class_id = "mage"
+unlock_level = 2
+cooldown_seconds = 7.0
+resource_cost = 25
+max_range = 6.0
+target_kind = "enemy"
+effect_kind = "damage"
+magnitude = 50
+status_id = ""
+status_duration = 0.0

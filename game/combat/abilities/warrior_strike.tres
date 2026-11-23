@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="LunexAbilityDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/abilities/ability_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ability_id = "warrior_strike"
+class_id = "warrior"
+unlock_level = 1
+cooldown_seconds = 3.0
+resource_cost = 12
+max_range = 2.4
+target_kind = "enemy"
+effect_kind = "damage"
+magnitude = 35
+status_id = ""
+status_duration = 0.0

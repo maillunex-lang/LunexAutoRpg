@@ -46,6 +46,15 @@ var _physics_total_ms := 0.0
 var _physics_max_ms := 0.0
 
 var _store := LunexProgressStore.new()
+var _ability_engine := LunexAbilityExecutor.new()
+const WARRIOR_SKILLS := ["warrior_strike", "warrior_shield"]
+const MAGE_SKILLS := ["mage_bolt", "mage_fireball"]
+const ABILITY_CATALOG := {
+	"warrior_strike": "res://game/combat/abilities/warrior_strike.tres",
+	"warrior_shield": "res://game/combat/abilities/warrior_shield.tres",
+	"mage_bolt": "res://game/combat/abilities/mage_bolt.tres",
+	"mage_fireball": "res://game/combat/abilities/mage_fireball.tres"
+}
 var _profiles: Dictionary[int, String] = {}
 var _contributors: Dictionary[String, Dictionary] = {}
 var _chat_next_ms: Dictionary[int, int] = {}
@@ -61,6 +70,9 @@ func _ready() -> void:
 	combat.targets = targets
 	_show_zone(0)
 	spawner.spawn_function = _spawn_player
+	for path: String in ABILITY_CATALOG.values():
+		if not _ability_engine.register(load(path) as LunexAbilityDefinition):
+			push_error("Invalid combat ability resource: " + path)
 	spawner.spawned.connect(_player_spawned)
 	var args := OS.get_cmdline_user_args()
 	if "--server" in args:
@@ -68,6 +80,7 @@ func _ready() -> void:
 		return
 
 	class_selection.class_requested.connect(func(class_id: String) -> void: _choose_class.rpc_id(1, class_id))
+	combat.skill_requested.connect(func(ability_id: String) -> void: _request_skill.rpc_id(1, ability_id, combat.target_index))
 	combat.attack_requested.connect(func() -> void: _request_attack.rpc_id(1, combat.target_index))
 	combat.auto_requested.connect(func(enabled: bool) -> void: _request_auto.rpc_id(1, enabled, combat.target_index))
 	progress_hud.accept_requested.connect(func() -> void: _accept_quest.rpc_id(1, progress_hud.selected_quest))
@@ -234,6 +247,7 @@ func _remove_player(id: int) -> void:
 	_spawn_slots.erase(id)
 	_profiles.erase(id)
 	_chat_next_ms.erase(id)
+	_ability_engine.clear_actor(id)
 	var player := players.get_node_or_null(str(id))
 	if player != null:
 		player.queue_free()
@@ -244,6 +258,7 @@ func _physics_process(delta: float) -> void:
 	if not is_instance_valid(_local_player):
 		return
 	combat.refresh(_local_player)
+	combat.refresh_skills(_local_player.class_id, int(_progress.get("experience", 0)), _local_player.ability_energy)
 	zone_hud.travel.visible = _local_player.health > 0 and _local_player.global_position.distance_to(gates[_local_player.zone_id].global_position) <= gate_distance
 	var nearest: LunexNpcActor = null
 	for candidate in npcs.get_children():
@@ -284,6 +299,54 @@ func _request_attack(index: int) -> void:
 	if player != null and player.health > 0 and index >= 0 and index < targets.size() and targets[index].zone_id == player.zone_id:
 		player.set_target(targets[index])
 		player.attack_requested = true
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_skill(ability_id: String, target_index: int) -> void:
+	var player := _sender_player()
+	if player == null or player.health <= 0 or ability_id.length() > 40:
+		return
+	if target_index < 0 or target_index >= targets.size():
+		return
+	var profile: String = _profiles.get(player.peer_id, "")
+	if profile.is_empty():
+		return
+	var state := _store.read_profile(profile)
+	if state.is_empty() or not bool(state.get("class_selected", false)):
+		return
+	var class_id: String = str(state.get("class_id", "warrior"))
+	if class_id != player.class_id or not ABILITY_CATALOG.has(ability_id):
+		return
+	var skill: LunexAbilityDefinition = load(ABILITY_CATALOG[ability_id])
+	if skill == null or skill.class_id != class_id:
+		return
+	var level := 2 if int(state.get("experience", 0)) >= level_two_experience else 1
+	var learned := PackedStringArray()
+	for id: String in WARRIOR_SKILLS if class_id == "warrior" else MAGE_SKILLS if class_id == "mage" else []:
+		var candidate: LunexAbilityDefinition = load(ABILITY_CATALOG[id])
+		if candidate != null and candidate.unlock_level <= level:
+			learned.append(id)
+	var target: LunexTrainingEnemy = targets[target_index]
+	var target_position := player.global_position if skill.target_kind == "self" else target.global_position
+	var visible := true
+	if skill.target_kind == "enemy":
+		visible = target.health > 0 and player.has_line_of_sight(target_position)
+	var result := _ability_engine.try_cast(player.peer_id, class_id, level, learned, int(player.ability_energy), ability_id, player.global_position, target_position, skill.target_kind, skill.target_kind == "self" or player.zone_id == target.zone_id, visible, Time.get_ticks_msec())
+	if not result.get("ok", false):
+		_skill_feedback.rpc_id(player.peer_id, str(result.get("reason", "unavailable")), player.ability_energy)
+		return
+	player.ability_energy = float(result.resource_left)
+	if result.effect_kind == "damage":
+		target.take_hit(int(result.magnitude), player.peer_id)
+		player.attack_sequence += 1
+	elif result.effect_kind == "status" and skill.target_kind == "self":
+		player.apply_shield(int(result.magnitude), float(skill.status_duration))
+	_skill_feedback.rpc_id(player.peer_id, "ok:" + ability_id, player.ability_energy)
+
+@rpc("authority", "call_remote", "reliable")
+func _skill_feedback(message: String, energy: float) -> void:
+	if is_instance_valid(_local_player):
+		_local_player.ability_energy = energy
+	combat.show_skill_feedback(message)
 
 @rpc("any_peer", "call_remote", "reliable")
 func _request_auto(enabled: bool, index: int) -> void:

@@ -11,6 +11,9 @@ extends LunexPlayer
 @onready var navigation: NavigationAgent3D = $NavigationAgent3D
 
 var health := 100
+var ability_energy := 100.0
+var shield_points := 0
+var shield_expires_ms := 0
 var revival_left := 0.0
 var _spawn_position := Vector3.ZERO
 var _was_alive := true
@@ -42,6 +45,7 @@ func prepare(id: int, spawn_position: Vector3, player_name: String, selected_cla
 	position = spawn_position
 	_spawn_position = spawn_position
 	health = max_health
+	ability_energy = 100.0
 	server_position = spawn_position
 	display_name = player_name
 	$PlayerName.text = display_name + " [" + _class_label() + "]"
@@ -52,6 +56,15 @@ func _class_label() -> String:
 func update_class(selected_class: String) -> void:
 	class_id = selected_class
 	$PlayerName.text = display_name + " [" + _class_label() + "]"
+
+func has_line_of_sight(target_position: Vector3) -> bool:
+	var height := Vector3.UP * 0.5
+	var ray := PhysicsRayQueryParameters3D.create(global_position + height, target_position + height, 1)
+	return get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
+
+func apply_shield(points: int, duration_seconds: float) -> void:
+	shield_points = maxi(shield_points, points)
+	shield_expires_ms = Time.get_ticks_msec() + int(duration_seconds * 1000.0)
 
 func accept_input(direction: Vector3) -> void:
 	if health <= 0:
@@ -143,7 +156,11 @@ func _auto_direction() -> Vector3:
 func take_counter_damage(damage: int) -> void:
 	if health <= 0:
 		return
-	health = maxi(0, health - damage)
+	if Time.get_ticks_msec() >= shield_expires_ms:
+		shield_points = 0
+	var absorbed := mini(shield_points, damage)
+	shield_points -= absorbed
+	health = maxi(0, health - (damage - absorbed))
 	if health == 0:
 		revival_left = revival_delay
 		auto_enabled = false
@@ -162,6 +179,8 @@ func _revive() -> void:
 	attack_requested = false
 	attack_cooldown = 0.0
 	health = max_health
+	ability_energy = 100.0
+	shield_points = 0
 
 func _ready() -> void:
 	_standing_collision_layer = collision_layer
@@ -179,6 +198,7 @@ func _physics_process(delta: float) -> void:
 		input_time_left = maxf(input_time_left - delta, 0.0)
 		var direction := desired_direction if input_time_left > 0.0 else Vector3.ZERO
 		attack_cooldown = maxf(attack_cooldown - delta, 0.0)
+		ability_energy = minf(100.0, ability_energy + delta * 5.0)
 		if auto_enabled:
 			direction = _auto_direction()
 		elif quest_auto_enabled:

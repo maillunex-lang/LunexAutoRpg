@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="LunexAbilityDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/abilities/ability_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ability_id = "mage_bolt"
+class_id = "mage"
+unlock_level = 1
+cooldown_seconds = 2.0
+resource_cost = 10
+max_range = 6.0
+target_kind = "enemy"
+effect_kind = "damage"
+magnitude = 28
+status_id = ""
+status_duration = 0.0

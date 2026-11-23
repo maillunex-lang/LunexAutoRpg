@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="LunexAbilityDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/abilities/ability_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ability_id = "warrior_shield"
+class_id = "warrior"
+unlock_level = 2
+cooldown_seconds = 10.0
+resource_cost = 20
+max_range = 0.5
+target_kind = "self"
+effect_kind = "status"
+magnitude = 30
+status_id = "shield"
+status_duration = 6.0

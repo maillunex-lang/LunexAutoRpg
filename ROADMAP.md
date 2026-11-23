@@ -83,3 +83,5 @@
 23.11.2026 — для ручной приёмки 7.7.2 запущен отдельный сервер `lunex-autorpg-stage772-test.service` на UDP `28777` с собственной SQLite; опубликована [APK 7.7.2](https://rikagro.ru/download/LunexAutoRpg-0.7.7.2-class-test.apk), проверена подпись и HTTP 200. **Ждём проверки владельца на Android.** 7.7.3 не начат.
 
 2026-11-23: 7.7.2 accepted. Stage 7.7.3 implemented in dev: editable ability definitions, authoritative validation engine, cooldowns, status data. [Report](STAGE-07-07-03-RESULT.md). Tests 102/102 PASS, Android export/sign verified. No live server changes. Stage 7.7.4 not started; awaits owner acceptance.
+
+2026-11-23: Owner accepted 7.7.3. Stage 7.7.4 implemented in dev: [Warrior and Mage abilities](STAGE-07-07-04-RESULT.md), authoritative skill RPC, training-target damage, shield, energy regeneration, editable HUD and resources. 117/117 automated checks passed; Android debug export/signature OK. No running services updated. Awaiting acceptance; stage 7.7.5 not started.
