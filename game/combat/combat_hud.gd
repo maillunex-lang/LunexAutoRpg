@@ -8,6 +8,7 @@ var _skill_ids := ["", ""]
 # Client countdown is cosmetic; server remains authoritative.
 var _local_cooldown_end: Dictionary = {}
 var _vfx_tween: Tween
+var _last_target_health := -1
 
 var zone_id := 0
 var selected := false
@@ -34,6 +35,9 @@ func refresh(player: LunexNetworkPlayer) -> void:
 		%Auto.disabled = true
 		return
 	var target := targets[target_index]
+	if selected and _last_target_health > target.health and target.health > 0:
+		_flash_hit()
+	_last_target_health = target.health
 	%Target.text = target.target_name if selected else "Выбрать цель"
 	%Health.text = ("%d / %d ОЗ" % [target.health, target.max_health]) if target.health > 0 else "Цель повержена"
 	%Attack.disabled = not alive or not _has_living_target()
@@ -58,8 +62,19 @@ func refresh_skills(class_id: String, experience: int, energy: float) -> void:
 		if remaining > 0.0:
 			button.text += " %.1fс" % remaining
 		if skill != null and skill.unlock_level > level:
-			button.text += " (ур. %d)" % skill.unlock_level
+			button.text += " (нужен ур. %d)" % skill.unlock_level
+		elif skill != null and energy < skill.resource_cost:
+			button.text += " (энергия %d)" % skill.resource_cost
 	%Energy.text = "Энергия: %d / 100" % int(energy)
+
+func _flash_hit() -> void:
+	%SkillFlash.color = Color(1.0, 0.25, 0.15, 0.15)
+	%SkillFlash.show()
+	if is_instance_valid(_vfx_tween) and _vfx_tween.is_running():
+		_vfx_tween.kill()
+	_vfx_tween = create_tween()
+	_vfx_tween.tween_property(%SkillFlash, "modulate:a", 0.0, 0.18).from(1.0)
+	_vfx_tween.tween_callback(func() -> void: %SkillFlash.hide())
 
 func show_skill_feedback(message: String, cooldown_ms: int = 0) -> void:
 	%SkillNotice.text = "Навык: " + message
@@ -89,6 +104,7 @@ func enter_zone(next_zone: int, first_target: int) -> void:
 	zone_id = next_zone
 	target_index = first_target
 	selected = false
+	_last_target_health = -1
 
 func _has_living_target() -> bool:
 	for candidate in targets:
