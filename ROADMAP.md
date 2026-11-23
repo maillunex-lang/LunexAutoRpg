@@ -129,3 +129,6 @@
 
 2026-11-23: OWNER APPROVED GDD-08.8 GUILD-088 B, RANK-088 B, ACTIVITY-088 B, PROGRESS-088 B, JOIN-088 B. See [GDD-08-08.md](GDD-08-08.md). @devbridgelunex memory recorded. GH08-031 and related candidates STUDY/isolated TEST ONLY, NO integration.
 2026-11-23: Drafted [GDD-08-09.md](GDD-08-09.md) daily/weekly activities, achievements, rankings. DAILY-089/ACHIEVE-089/RANK-089/RESET-089/CATCHUP-089 awaiting owner approval. GH08-032..034 discovered, not audited/integrated. No gameplay/deployment changes.
+
+2026-11-23: OWNER APPROVED GDD-08.9 DAILY-089 B, ACHIEVE-089 B, RANK-089 B, RESET-089 B, CATCHUP-089 B. See [GDD-08-09.md](GDD-08-09.md). @devbridgelunex memory updated. GH08-032..034 STUDY/isolated TEST ONLY, NO integration.
+2026-11-23: Drafted [GDD-08-10.md](GDD-08-10.md) currencies/shops/trading/binding/economic sinks. CURRENCY-0810/SHOP-0810/TRADE-0810/BIND-0810/SINK-0810 awaiting owner approval. GH08-035..036 discovered for study; no game/deploy changes.
