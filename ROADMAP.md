@@ -135,3 +135,6 @@
 
 2026-11-23: OWNER APPROVED GDD-08.10 CURRENCY-0810 B, SHOP-0810 B, TRADE-0810 B, BIND-0810 B, SINK-0810 B. See [GDD-08-10.md](GDD-08-10.md). @devbridgelunex memory recorded. GH08-035..036 STUDY/isolated TEST only; NO integration or real-money payments approved.
 2026-11-23: Drafted [GDD-08-11.md](GDD-08-11.md) pets/companions. PET-0811, ACQUIRE-0811, ROLE-0811, PROGRESS-0811, CONTROL-0811 awaiting owner approval. GH08-037 discovered for study, no integration. No gameplay/deploy changes.
+
+2026-11-23: OWNER APPROVED GDD-08.11 PET-0811 B, ACQUIRE-0811 B, ROLE-0811 B, PROGRESS-0811 B, CONTROL-0811 B. See [GDD-08-11.md](GDD-08-11.md). @devbridgelunex memory recorded. GH08-037 and GH08-023 STUDY/isolated TEST ONLY, NO integration.
+2026-11-23: Drafted [GDD-08-12.md](GDD-08-12.md) PvP/arena. PVP-0812, MODE-0812, BALANCE-0812, REWARD-0812, QUEUE-0812 awaiting owner approval. GH08-038..040 discovered for study, not audited/integrated. No game/deploy changes.
