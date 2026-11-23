@@ -114,6 +114,7 @@ func _ready() -> void:
 	progress_hud.chapter_equip_requested.connect(func(quest_id: String) -> void: _equip_chapter_reward.rpc_id(1, quest_id))
 	_apply_hud_layout(hud_editor.action_slider.value, hud_editor.joystick_slider.value)
 	_apply_hud_positions(hud_editor.action_offset, hud_editor.joystick_offset)
+	get_viewport().size_changed.connect(func() -> void: _apply_hud_positions(hud_editor.action_offset, hud_editor.joystick_offset))
 	class_selection.class_requested.connect(func(class_id: String) -> void: _choose_class.rpc_id(1, class_id))
 	combat.skill_requested.connect(func(ability_id: String) -> void: _request_skill.rpc_id(1, ability_id, combat.target_index))
 	combat.attack_requested.connect(func() -> void: _request_attack.rpc_id(1, combat.target_index))
@@ -881,12 +882,17 @@ func _apply_hud_layout(action_scale: float, joystick_scale: float) -> void:
 	joystick.scale = Vector2.ONE * clampf(joystick_scale, 0.65, 1.35)
 
 func _apply_hud_positions(action_offset: Vector2, joystick_offset: Vector2) -> void:
+	# Place controls in viewport coordinates, not relative to right/bottom anchors.
 	var viewport_size := get_viewport().get_visible_rect().size
 	var margin := hud_editor.layout_preset.edge_margin
 	var actions: Control = combat.get_node("Actions")
-	var action_base := Vector2(viewport_size.x - 228.0, viewport_size.y - 410.0)
-	var action_pos := LunexHudLayoutEditor.clamp_to_safe_area(action_base + action_offset, actions.size * actions.scale, viewport_size, margin)
-	actions.position = action_pos - Vector2(viewport_size.x, viewport_size.y)
-	var joystick_base := Vector2(24.0, viewport_size.y - 210.0)
-	var joystick_pos := LunexHudLayoutEditor.clamp_to_safe_area(joystick_base + joystick_offset, joystick.size * joystick.scale, viewport_size, margin)
-	joystick.position = joystick_pos - Vector2(0.0, viewport_size.y)
+	var action_size := Vector2(180.0, 376.0) * actions.scale
+	var action_base := Vector2(viewport_size.x - action_size.x - 24.0, viewport_size.y - action_size.y - 24.0)
+	var action_pos := LunexHudLayoutEditor.clamp_to_safe_area(action_base + action_offset, action_size, viewport_size, margin)
+	actions.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	actions.position = action_pos
+	var joystick_size := Vector2(144.0, 144.0) * joystick.scale
+	var joystick_base := Vector2(24.0, viewport_size.y - joystick_size.y - 24.0)
+	var joystick_pos := LunexHudLayoutEditor.clamp_to_safe_area(joystick_base + joystick_offset, joystick_size, viewport_size, margin)
+	joystick.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	joystick.position = joystick_pos
