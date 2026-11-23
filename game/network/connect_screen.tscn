@@ -62,7 +62,7 @@ custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 min_value = 1.0
 max_value = 65535.0
-value = 28740.0
+value = 28766.0
 
 [node name="NameLabel" type="Label" parent="Form/Panel/Margin/Fields"]
 layout_mode = 2
