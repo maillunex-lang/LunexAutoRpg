@@ -81,3 +81,5 @@
 23.11.2026 — владелец ответил «Делай» после отчёта 7.7.1: принято как разрешение продолжить 7.7.2. Реализованы выбор класса для новых персонажей, серверная однократная фиксация класса, отображение класса рядом с ником. LEGACY-077 B сохранён: старые персонажи автоматически зафиксированы как Воин. 21+26+15+20=**82/82 PASS**, Android APK локально собрана и подписана. [Отчёт 7.7.2](STAGE-07-07-02-RESULT.md). Серверы не переключены. Ожидается приёмка 7.7.2, 7.7.3 не начат.
 
 23.11.2026 — для ручной приёмки 7.7.2 запущен отдельный сервер `lunex-autorpg-stage772-test.service` на UDP `28777` с собственной SQLite; опубликована [APK 7.7.2](https://rikagro.ru/download/LunexAutoRpg-0.7.7.2-class-test.apk), проверена подпись и HTTP 200. **Ждём проверки владельца на Android.** 7.7.3 не начат.
+
+2026-11-23: 7.7.2 accepted. Stage 7.7.3 implemented in dev: editable ability definitions, authoritative validation engine, cooldowns, status data. [Report](STAGE-07-07-03-RESULT.md). Tests 102/102 PASS, Android export/sign verified. No live server changes. Stage 7.7.4 not started; awaits owner acceptance.
