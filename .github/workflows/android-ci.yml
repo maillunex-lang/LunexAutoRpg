@@ -55,6 +55,21 @@ jobs:
           unzip -p .ci-tools/templates.tpz templates/android_release.apk > "$HOME/.local/share/godot/export_templates/4.7.2.stable/android_release.apk"
           test -s "$HOME/.local/share/godot/export_templates/4.7.2.stable/android_debug.apk"
 
+      - name: Install pinned Godot SQLite GDExtension
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/2shady4u/godot-sqlite/releases/download/v4.9/addons.zip" \
+            -o .ci-tools/godot-sqlite-v4.9.zip
+          unzip -q .ci-tools/godot-sqlite-v4.9.zip \
+            "addons/godot-sqlite/gdsqlite.gdextension" \
+            "addons/godot-sqlite/gdsqlite.gdextension.uid" \
+            "addons/godot-sqlite/bin/libgdsqlite.linux.template_debug.x86_64.so" \
+            "addons/godot-sqlite/bin/libgdsqlite.linux.template_release.x86_64.so"
+          echo "a2fa1dddab744135a3ce0f16da6a84d41ec981ffc85560ecb3abf54d9ad4c393  addons/godot-sqlite/bin/libgdsqlite.linux.template_debug.x86_64.so" | sha256sum --check
+          test -s addons/godot-sqlite/gdsqlite.gdextension
+
       - name: Import and validate project
         shell: bash
         run: |
