@@ -13,15 +13,49 @@ func open(path: String) -> bool:
 		return false
 	_db = ClassDB.instantiate("SQLite")
 	_db.path = path
+	if not _db.open_db() or not _db.query("PRAGMA synchronous=FULL"):
+		return false
+	if not _db.query("CREATE TABLE IF NOT EXISTS profiles (id TEXT PRIMARY KEY, quest INTEGER NOT NULL DEFAULT 0, experience INTEGER NOT NULL DEFAULT 0, equipped TEXT NOT NULL DEFAULT '')"):
+		return false
+	if not _migrate_classes():
+		return false
 	return (
-		_db.open_db()
-		and _db.query("PRAGMA synchronous=FULL")
-		and _db.query("CREATE TABLE IF NOT EXISTS profiles (id TEXT PRIMARY KEY, quest INTEGER NOT NULL DEFAULT 0, experience INTEGER NOT NULL DEFAULT 0, equipped TEXT NOT NULL DEFAULT '')")
-		and _db.query("CREATE TABLE IF NOT EXISTS training_rewards (profile TEXT PRIMARY KEY, item TEXT NOT NULL)")
+		_db.query("CREATE TABLE IF NOT EXISTS training_rewards (profile TEXT PRIMARY KEY, item TEXT NOT NULL)")
 		and _db.query("CREATE TABLE IF NOT EXISTS quest_progress (profile TEXT NOT NULL, quest_id TEXT NOT NULL, state INTEGER NOT NULL, item TEXT NOT NULL DEFAULT '', equipped TEXT NOT NULL DEFAULT '', PRIMARY KEY (profile, quest_id))")
 		and _db.query("CREATE TABLE IF NOT EXISTS chapter_quests (profile TEXT NOT NULL, quest_id TEXT NOT NULL, state INTEGER NOT NULL DEFAULT 0, objective_count INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(profile, quest_id), FOREIGN KEY(profile) REFERENCES profiles(id))")
 		and _db.query("INSERT OR IGNORE INTO quest_progress SELECT p.id, 'training', p.quest, COALESCE(r.item, ''), p.equipped FROM profiles p LEFT JOIN training_rewards r ON r.profile = p.id WHERE p.quest > 0 OR r.item IS NOT NULL")
 	)
+
+# Migration is atomic and repeatable. Every pre-existing character is assigned warrior.
+func _migrate_classes() -> bool:
+	if not _db.query("BEGIN IMMEDIATE"):
+		return false
+	var ok: bool = _db.query("PRAGMA table_info(profiles)")
+	var columns := {}
+	if ok:
+		for row: Dictionary in _db.query_result:
+			columns[str(row.name)] = true
+		for required in ["id", "quest", "experience", "equipped"]:
+			if not columns.has(required):
+				ok = false
+				break
+	if ok and not columns.has("class_id"):
+		ok = _db.query("ALTER TABLE profiles ADD COLUMN class_id TEXT NOT NULL DEFAULT 'warrior'")
+	if ok:
+		ok = _db.query("UPDATE profiles SET class_id = 'warrior' WHERE class_id IS NULL OR class_id = ''")
+	if ok and _db.query("COMMIT"):
+		return true
+	_db.query("ROLLBACK")
+	return false
+
+# Whitelist enforced server-side. Actual class selection belongs to 7.7.2.
+func is_valid_class_id(class_id: String) -> bool:
+	return class_id in ["warrior", "mage", "priest", "bard"]
+
+func assign_class(profile: String, class_id: String) -> bool:
+	if not is_valid_class_id(class_id):
+		return false
+	return _db.query_with_bindings("UPDATE profiles SET class_id = ? WHERE id = ?", [class_id, profile])
 
 func load_profile(profile: String) -> Dictionary:
 	if not _db.query_with_bindings("INSERT OR IGNORE INTO profiles (id) VALUES (?)", [profile]):
@@ -29,9 +63,10 @@ func load_profile(profile: String) -> Dictionary:
 	return read_profile(profile)
 
 func read_profile(profile: String) -> Dictionary:
-	if not _db.query_with_bindings("SELECT experience FROM profiles WHERE id = ?", [profile]) or _db.query_result.is_empty():
+	if not _db.query_with_bindings("SELECT experience, class_id FROM profiles WHERE id = ?", [profile]) or _db.query_result.is_empty():
 		return {}
 	var experience: int = _db.query_result[0].experience
+	var class_id: String = str(_db.query_result[0].class_id)
 	if not _db.query_with_bindings("SELECT quest_id, state, item, equipped FROM quest_progress WHERE profile = ?", [profile]):
 		return {}
 	var quests := {}
@@ -42,7 +77,7 @@ func read_profile(profile: String) -> Dictionary:
 	var chapter := {}
 	for row: Dictionary in _db.query_result:
 		chapter[row.quest_id] = {"state": row.state, "count": row.objective_count}
-	return {"experience": experience, "quests": quests, "chapter_quests": chapter}
+	return {"experience": experience, "class_id": class_id, "quests": quests, "chapter_quests": chapter}
 
 func is_active(profile: String, quest_id: String) -> bool:
 	return _db.query_with_bindings(

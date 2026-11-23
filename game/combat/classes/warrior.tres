@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="LunexClassDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/classes/class_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+class_id = "warrior"
+display_name = "Воин"
+role = "tank"
+base_health = 140
+base_damage = 15
+attack_interval = 0.8
