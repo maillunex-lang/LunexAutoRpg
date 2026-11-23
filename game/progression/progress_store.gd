@@ -187,6 +187,9 @@ func is_chapter_active(profile: String, quest_id: String) -> bool:
 const EQUIPMENT_SLOTS := ["weapon", "armor", "helmet", "boots", "ring", "amulet"]
 
 static func equipment_slot_for_item(item_id: String) -> String:
+	for slot in EQUIPMENT_SLOTS:
+		if item_id.ends_with("_" + slot):
+			return slot
 	if item_id.ends_with("ring"):
 		return "ring"
 	if item_id.ends_with("relic") or item_id.ends_with("charm") or item_id.ends_with("emblem"):

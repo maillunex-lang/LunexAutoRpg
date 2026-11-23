@@ -115,3 +115,72 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 39)
 layout_mode = 2
 text = "Закрыть"
+
+[node name="Inventory" type="Button" parent="."]
+unique_name_in_owner = true
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 230.0
+offset_top = 24.0
+offset_right = 374.0
+offset_bottom = 70.0
+text = "Рюкзак"
+
+[node name="InventoryPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -230.0
+offset_right = 230.0
+offset_bottom = 230.0
+
+[node name="InventoryMargin" type="MarginContainer" parent="InventoryPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="InventoryFields" type="VBoxContainer" parent="InventoryPanel/InventoryMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InventoryTitle" type="Label" parent="InventoryPanel/InventoryMargin/InventoryFields"]
+layout_mode = 2
+text = "Рюкзак и экипировка"
+
+[node name="InventorySlots" type="Label" parent="InventoryPanel/InventoryMargin/InventoryFields"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="InventoryItems" type="ItemList" parent="InventoryPanel/InventoryMargin/InventoryFields"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InventoryInfo" type="Label" parent="InventoryPanel/InventoryMargin/InventoryFields"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+text = "Выбери предмет"
+
+[node name="InventoryEquip" type="Button" parent="InventoryPanel/InventoryMargin/InventoryFields"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Надеть"
+
+[node name="InventoryUpgrade" type="Button" parent="InventoryPanel/InventoryMargin/InventoryFields"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Улучшить"
+
+[node name="InventoryClose" type="Button" parent="InventoryPanel/InventoryMargin/InventoryFields"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрыть"

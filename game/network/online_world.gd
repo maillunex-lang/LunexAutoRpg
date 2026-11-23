@@ -116,6 +116,7 @@ func _ready() -> void:
 	hud_editor.position_changed.connect(_apply_hud_positions)
 	progress_hud.upgrade_requested.connect(func(item_id: String) -> void: _upgrade_item.rpc_id(1, item_id))
 	progress_hud.chapter_equip_requested.connect(func(quest_id: String) -> void: _equip_chapter_reward.rpc_id(1, quest_id))
+	progress_hud.inventory_equip_requested.connect(func(item_id: String) -> void: _equip_inventory.rpc_id(1, item_id))
 	_apply_hud_layout(hud_editor.action_slider.value, hud_editor.joystick_slider.value)
 	_apply_hud_positions(hud_editor.action_offset, hud_editor.joystick_offset)
 	get_viewport().size_changed.connect(func() -> void: _apply_hud_positions(hud_editor.action_offset, hud_editor.joystick_offset))
@@ -819,6 +820,15 @@ func _upgrade_item(item_id: String) -> void:
 		return
 	var profile: String = _profiles.get(player.peer_id, "")
 	if not profile.is_empty() and _store.upgrade_inventory_item(profile, item_id):
+		_publish_progress(player.peer_id, profile)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _equip_inventory(item_id: String) -> void:
+	var player := _sender_player()
+	if player == null or player.health <= 0 or item_id.length() > 64:
+		return
+	var profile: String = _profiles.get(player.peer_id, "")
+	if not profile.is_empty() and _store.equip_inventory_item(profile, item_id):
 		_publish_progress(player.peer_id, profile)
 
 @rpc("any_peer", "call_remote", "reliable")
