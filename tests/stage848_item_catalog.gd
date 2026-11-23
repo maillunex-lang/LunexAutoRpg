@@ -35,7 +35,16 @@ func run() -> void:
 			push_error("STAGE848 forged catalog item granted")
 			quit(1)
 			return
+	# Completed chapter must not mint duplicate gold, XP or items.
+	if store.chapter_complete(profile, catalog[0].item_id, 1, 10, catalog[0].item_id, 1, 100):
+		push_error("STAGE848 duplicate chapter reward accepted")
+		quit(1)
+		return
 	var state := store.read_profile(profile)
+	if int(state.get("experience", 0)) != 60:
+		push_error("STAGE848 duplicate XP")
+		quit(1)
+		return
 	if state.inventory.size() != 6 or state.equipped_slots.size() != 6 or int(state.gear_score) != 600 or int(state.gold) != 600:
 		push_error("STAGE848 incorrect saved inventory "+str(state))
 		quit(1)
