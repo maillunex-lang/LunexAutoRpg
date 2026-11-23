@@ -12,6 +12,7 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @export var courtyard_name := "Тренировочный двор"
 @export var passage_name := "Каменный проход"
 @export var quest_rewards: Array[LunexQuestReward]
+@export var chapter_quest_definitions: Array[LunexChapterQuestDefinition] = []
 @export_range(1, 100000) var level_two_experience := 50
 
 @onready var players: Node3D = $Players
@@ -316,6 +317,60 @@ func _reject_login(message: String) -> void:
 func _receive_progress(state: Dictionary) -> void:
 	_progress = state
 	progress_hud.show_state(state, quest_rewards, level_two_experience)
+
+func _chapter_definition(quest_id: String) -> LunexChapterQuestDefinition:
+	for definition in chapter_quest_definitions:
+		if definition != null and definition.quest_id == quest_id:
+			return definition
+	return null
+
+@rpc("any_peer", "call_remote", "reliable")
+func _chapter_accept(quest_id: String) -> void:
+	var player := _sender_player()
+	if player == null or player.health <= 0 or quest_id.length() > 64:
+		return
+	var definition := _chapter_definition(quest_id)
+	if definition == null or definition.npc_id.is_empty():
+		return
+	var nearby := false
+	for candidate in npcs.get_children():
+		var npc := candidate as LunexNpcActor
+		if npc.npc_id == definition.npc_id and npc.zone_id == player.zone_id and player.global_position.distance_to(npc.global_position) <= NPC_DISTANCE:
+			nearby = true
+			break
+	if not nearby:
+		return
+	var profile: String = _profiles.get(player.peer_id, "")
+	if not profile.is_empty() and _store.chapter_accept(profile, definition.quest_id, definition.prerequisite_id):
+		_publish_progress(player.peer_id, profile)
+
+# Server-side only. Future NPC/objective events must call this after validation.
+func _chapter_record_verified_objective(peer_id: int, quest_id: String) -> bool:
+	if not multiplayer.is_server():
+		return false
+	var player := players.get_node_or_null(str(peer_id)) as LunexNetworkPlayer
+	var definition := _chapter_definition(quest_id)
+	if player == null or definition == null or player.health <= 0:
+		return false
+	var profile: String = _profiles.get(peer_id, "")
+	if profile.is_empty():
+		return false
+	if not _store.chapter_advance(profile, quest_id, 1, definition.objective_goal):
+		return false
+	_publish_progress(peer_id, profile)
+	return true
+
+func _chapter_complete_verified(peer_id: int, quest_id: String) -> bool:
+	if not multiplayer.is_server():
+		return false
+	var definition := _chapter_definition(quest_id)
+	var profile: String = _profiles.get(peer_id, "")
+	if definition == null or profile.is_empty():
+		return false
+	if not _store.chapter_complete(profile, quest_id, definition.objective_goal):
+		return false
+	_publish_progress(peer_id, profile)
+	return true
 
 func _publish_progress(peer_id: int, profile: String) -> void:
 	var state := _store.read_profile(profile)

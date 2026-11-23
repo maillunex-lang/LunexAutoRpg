@@ -19,6 +19,7 @@ func open(path: String) -> bool:
 		and _db.query("CREATE TABLE IF NOT EXISTS profiles (id TEXT PRIMARY KEY, quest INTEGER NOT NULL DEFAULT 0, experience INTEGER NOT NULL DEFAULT 0, equipped TEXT NOT NULL DEFAULT '')")
 		and _db.query("CREATE TABLE IF NOT EXISTS training_rewards (profile TEXT PRIMARY KEY, item TEXT NOT NULL)")
 		and _db.query("CREATE TABLE IF NOT EXISTS quest_progress (profile TEXT NOT NULL, quest_id TEXT NOT NULL, state INTEGER NOT NULL, item TEXT NOT NULL DEFAULT '', equipped TEXT NOT NULL DEFAULT '', PRIMARY KEY (profile, quest_id))")
+		and _db.query("CREATE TABLE IF NOT EXISTS chapter_quests (profile TEXT NOT NULL, quest_id TEXT NOT NULL, state INTEGER NOT NULL DEFAULT 0, objective_count INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(profile, quest_id), FOREIGN KEY(profile) REFERENCES profiles(id))")
 		and _db.query("INSERT OR IGNORE INTO quest_progress SELECT p.id, 'training', p.quest, COALESCE(r.item, ''), p.equipped FROM profiles p LEFT JOIN training_rewards r ON r.profile = p.id WHERE p.quest > 0 OR r.item IS NOT NULL")
 	)
 
@@ -36,7 +37,12 @@ func read_profile(profile: String) -> Dictionary:
 	var quests := {}
 	for row: Dictionary in _db.query_result:
 		quests[row.quest_id] = {"quest": row.state, "item": row.item, "equipped": row.equipped}
-	return {"experience": experience, "quests": quests}
+	if not _db.query_with_bindings("SELECT quest_id, state, objective_count FROM chapter_quests WHERE profile = ?", [profile]):
+		return {}
+	var chapter := {}
+	for row: Dictionary in _db.query_result:
+		chapter[row.quest_id] = {"state": row.state, "count": row.objective_count}
+	return {"experience": experience, "quests": quests, "chapter_quests": chapter}
 
 func is_active(profile: String, quest_id: String) -> bool:
 	return _db.query_with_bindings(
@@ -66,3 +72,45 @@ func equip(profile: String, quest_id: String) -> bool:
 	return _db.query_with_bindings(
 		"UPDATE quest_progress SET equipped = item WHERE profile = ? AND quest_id = ? AND state = ? AND item <> ''",
 		[profile, quest_id, Quest.COMPLETE])
+
+# Separate chapter quest state. No rewards or content are activated in 7.6.3.
+# All transitions are guarded by a transaction and the current state.
+func chapter_accept(profile: String, quest_id: String, prerequisite_id: String = "") -> bool:
+	if not _db.query("BEGIN IMMEDIATE"):
+		return false
+	var ok: bool = _db.query_with_bindings(
+		"""INSERT OR IGNORE INTO chapter_quests (profile, quest_id, state)
+		SELECT id, ?, 1 FROM profiles WHERE id = ? AND
+		(? = '' OR EXISTS (SELECT 1 FROM chapter_quests WHERE profile = ? AND quest_id = ? AND state = 2))""",
+		[quest_id, profile, prerequisite_id, profile, prerequisite_id])
+	var changed: bool = ok and _db.query("SELECT changes() AS n") and int(_db.query_result[0].n) == 1
+	if changed and _db.query("COMMIT"):
+		return true
+	_db.query("ROLLBACK")
+	return false
+
+func chapter_advance(profile: String, quest_id: String, amount: int, goal: int) -> bool:
+	if amount != 1 or goal < 1 or goal > 1000:
+		return false
+	if not _db.query("BEGIN IMMEDIATE"):
+		return false
+	var ok: bool = _db.query_with_bindings(
+		"UPDATE chapter_quests SET objective_count = MIN(objective_count + ?, ?) WHERE profile = ? AND quest_id = ? AND state = 1 AND objective_count < ?",
+		[amount, goal, profile, quest_id, goal])
+	var changed: bool = ok and _db.query("SELECT changes() AS n") and int(_db.query_result[0].n) == 1
+	if changed and _db.query("COMMIT"):
+		return true
+	_db.query("ROLLBACK")
+	return false
+
+func chapter_complete(profile: String, quest_id: String, goal: int) -> bool:
+	if goal < 1 or goal > 1000 or not _db.query("BEGIN IMMEDIATE"):
+		return false
+	var ok: bool = _db.query_with_bindings(
+		"UPDATE chapter_quests SET state = 2 WHERE profile = ? AND quest_id = ? AND state = 1 AND objective_count >= ?",
+		[profile, quest_id, goal])
+	var changed: bool = ok and _db.query("SELECT changes() AS n") and int(_db.query_result[0].n) == 1
+	if changed and _db.query("COMMIT"):
+		return true
+	_db.query("ROLLBACK")
+	return false
