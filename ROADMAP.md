@@ -176,3 +176,5 @@
 - [ ] Two-client ENet validation, Android performance, CI and staged production release.
 
 Integration design: `docs/world/MAIN_WORLD_INTEGRATION.md`. No proprietary Era of Celestials assets or source code.
+
+- [~] MAIN-WORLD-001 stage 2 partial: editable road/collision corridor scenes placed in the real OnlineWorld; existing walls/navmeshes/gate RPC still require conversion, so not yet seamless.

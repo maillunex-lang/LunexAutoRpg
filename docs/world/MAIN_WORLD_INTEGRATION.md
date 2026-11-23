@@ -19,3 +19,10 @@ Owner direction 2026-11-23: implement actual original MMORPG, not standalone pro
 ## Current status
 
 Stage 1 inspected and integration worktree created. No gameplay code or running production server changed. Existing isolated proof of concept remains reference-only; not merged blindly. Do not label full game as a completed clone.
+
+## Stage 2 partial implementation (2026-11-23)
+
+- Added four native Godot-editable `game/world/zone_corridor.tscn` road/collision segments into the **actual** `game/network/online_world.tscn`, between zone centers X=0/42/84/126/168.
+- Added `game/world/world_visual_streamer.gd`, an opt-in visual-distance component which never unloads physics, navmesh or authoritative AI. Not yet wired to player visibility, pending safe network lifecycle handling.
+- Godot 4.7.2 import and stage844 regression pass. **Do not consider the world seamless yet**: original CSG perimeter walls and disconnected navmeshes still block physical cross-zone traversal, and gate RPC still teleports players.
+- No production deploy or database changes. Next task within stage 2: editor-editable openings, continuous navmesh and collision checks, then server-authoritative zone transition changes.

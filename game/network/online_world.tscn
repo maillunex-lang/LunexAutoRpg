@@ -1,4 +1,4 @@
-[gd_scene load_steps=55 format=3]
+[gd_scene load_steps=56 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -72,6 +72,8 @@
 [ext_resource type="Resource" path="res://game/progression/side_stone_watch.tres" id="side_1"]
 [ext_resource type="Resource" path="res://game/progression/side_ruin_seal.tres" id="side_2"]
 
+[ext_resource type="PackedScene" path="res://game/world/zone_corridor.tscn" id="world_corridor"]
+
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
 quest_rewards = Array[ExtResource("13")]([ExtResource("10"), ExtResource("14"), ExtResource("20")])
@@ -138,6 +140,20 @@ position = Vector3(0, 0, -7.3)
 
 [node name="MistBellBackGate" parent="MistBell" instance=ExtResource("18")]
 position = Vector3(0, 0, -7.3)
+
+[node name="WorldCorridors" type="Node3D" parent="."]
+
+[node name="Corridor1" parent="WorldCorridors" instance=ExtResource("world_corridor")]
+position = Vector3(21, 0, 0)
+
+[node name="Corridor2" parent="WorldCorridors" instance=ExtResource("world_corridor")]
+position = Vector3(63, 0, 0)
+
+[node name="Corridor3" parent="WorldCorridors" instance=ExtResource("world_corridor")]
+position = Vector3(105, 0, 0)
+
+[node name="Corridor4" parent="WorldCorridors" instance=ExtResource("world_corridor")]
+position = Vector3(147, 0, 0)
 
 [node name="StoneGuard" parent="." instance=ExtResource("6")]
 definition = ExtResource("enemy_2")
