@@ -4,7 +4,6 @@ func _initialize() -> void:
 	call_deferred("run")
 
 func run() -> void:
-	var hud := LunexProgressHUD.new()
 	if LunexProgressHUD.item_display_name("starter_weapon") != "Клинок странника":
 		push_error("STAGE850 catalog title mismatch")
 		quit(1)
