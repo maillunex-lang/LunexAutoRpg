@@ -6,6 +6,7 @@ signal defeated
 
 @export var zone_id := 0
 @export var target_id := "training"
+@export var definition: LunexEnemyDefinition
 @export var target_name := "Тренировочная цель"
 @export_range(1, 1000) var max_health := 60
 @export_range(0.5, 60.0) var respawn_delay := 4.0
@@ -18,6 +19,16 @@ var health: int
 var _was_alive := true
 
 func _ready() -> void:
+	if definition != null:
+		if not definition.is_valid_definition():
+			push_error("Invalid enemy definition: " + name)
+		else:
+			# Quest target_id remains unchanged; the new stable instance ID is separate.
+			target_id = definition.target_id
+			target_name = definition.target_name
+			zone_id = definition.zone_id
+			max_health = definition.max_health
+			respawn_delay = definition.respawn_delay
 	$Name.text = target_name
 	health = max_health
 	clips.get_animation(idle_clip).loop_mode = Animation.LOOP_LINEAR

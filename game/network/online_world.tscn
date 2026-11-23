@@ -1,4 +1,4 @@
-[gd_scene load_steps=43 format=3]
+[gd_scene load_steps=51 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -59,6 +59,15 @@
 [ext_resource type="PackedScene" path="res://game/combat/mist_bell_guardian.tscn" id="41"]
 [ext_resource type="Resource" path="res://game/progression/chapter_11.tres" id="42"]
 
+[ext_resource type="Resource" path="res://game/combat/enemies/training.tres" id="enemy_0"]
+[ext_resource type="Resource" path="res://game/combat/enemies/gate_watch.tres" id="enemy_1"]
+[ext_resource type="Resource" path="res://game/combat/enemies/stone_guard.tres" id="enemy_2"]
+[ext_resource type="Resource" path="res://game/combat/enemies/ash_wanderer.tres" id="enemy_3"]
+[ext_resource type="Resource" path="res://game/combat/enemies/mist_hunter.tres" id="enemy_4"]
+[ext_resource type="Resource" path="res://game/combat/enemies/grove_wraith.tres" id="enemy_5"]
+[ext_resource type="Resource" path="res://game/combat/enemies/ruin_sentinel.tres" id="enemy_6"]
+[ext_resource type="Resource" path="res://game/combat/enemies/mist_bell_guardian.tres" id="enemy_7"]
+
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
 quest_rewards = Array[ExtResource("13")]([ExtResource("10"), ExtResource("14"), ExtResource("20")])
@@ -70,9 +79,11 @@ navigation_mesh = ExtResource("8")
 [node name="Zone" parent="Navigation" instance=ExtResource("2")]
 
 [node name="TrainingEnemy" parent="." instance=ExtResource("6")]
+definition = ExtResource("enemy_0")
 position = Vector3(0, 0, -5.6)
 
 [node name="GateWatch" parent="." instance=ExtResource("15")]
+definition = ExtResource("enemy_1")
 position = Vector3(7, 0, -5.1)
 
 [node name="CourtyardGate" parent="." instance=ExtResource("18")]
@@ -124,6 +135,7 @@ position = Vector3(0, 0, -7.3)
 position = Vector3(0, 0, -7.3)
 
 [node name="StoneGuard" parent="." instance=ExtResource("6")]
+definition = ExtResource("enemy_2")
 position = Vector3(42, 0, -4.8)
 zone_id = 1
 target_id = "stone_guard"
@@ -164,6 +176,7 @@ display_name = "Эрин, дозорная"
 zone_id = 1
 
 [node name="AshWanderer" parent="." instance=ExtResource("15")]
+definition = ExtResource("enemy_3")
 position = Vector3(-7, 0, -6)
 zone_id = 0
 target_id = "ash_wanderer"
@@ -174,6 +187,7 @@ counter_radius = 2.0
 respawn_delay = 9.0
 
 [node name="MistHunter" parent="." instance=ExtResource("15")]
+definition = ExtResource("enemy_4")
 position = Vector3(48, 0, -5)
 zone_id = 1
 target_id = "mist_hunter"
@@ -202,9 +216,11 @@ display_name = "Страж колокола"
 zone_id = 4
 
 [node name="MistBellGuardian" parent="." instance=ExtResource("41")]
+definition = ExtResource("enemy_7")
 position = Vector3(168, 0, -5)
 
 [node name="GroveWraith" parent="." instance=ExtResource("15")]
+definition = ExtResource("enemy_5")
 position = Vector3(84, 0, -5)
 zone_id = 2
 target_id = "grove_wraith"
@@ -213,6 +229,7 @@ max_health = 110
 counter_damage = 15
 
 [node name="RuinSentinel" parent="." instance=ExtResource("15")]
+definition = ExtResource("enemy_6")
 position = Vector3(126, 0, -5)
 zone_id = 3
 target_id = "ruin_sentinel"

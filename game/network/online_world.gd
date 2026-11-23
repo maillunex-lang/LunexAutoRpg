@@ -447,7 +447,13 @@ func _request_skill(ability_id: String, target_index: int) -> void:
 		target.take_hit(int(result.magnitude), player.peer_id)
 		player.attack_sequence += 1
 	elif result.effect_kind == "heal":
+		var hp_before := ally.health
 		ally.heal(int(result.magnitude))
+		var effective_heal: float = float(maxi(0, ally.health - hp_before))
+		if effective_heal > 0.0:
+			for candidate in targets:
+				if candidate is LunexGateWatch and candidate.zone_id == player.zone_id:
+					(candidate as LunexGateWatch).add_support_threat(player.peer_id, effective_heal)
 	elif result.effect_kind == "status":
 		if skill.status_id == "shield":
 			ally.apply_shield(int(result.magnitude), float(skill.status_duration))

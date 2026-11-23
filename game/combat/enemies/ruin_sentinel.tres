@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="LunexEnemyDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/enemy_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+enemy_instance_id = "world_ruin_sentinel_001"
+spawn_point_id = "spawn_ruin_sentinel_001"
+target_id = "ruin_sentinel"
+target_name = "Страж руин"
+zone_id = 3
+max_health = 155
+respawn_delay = 6.0
+aggro_radius = 6.0
+leash_radius = 14.0
+patrol_speed = 1.6
+chase_speed = 2.6
+damage_threat_factor = 1.0
+healing_threat_factor = 0.7
