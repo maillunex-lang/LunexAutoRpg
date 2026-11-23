@@ -114,3 +114,6 @@
 2026-11-23: Drafted [GDD-08-04.md](GDD-08-04.md): level, equipment, rarity, GS and upgrades, with GH08-016..021 GitHub candidates. LEVEL-084/GEAR-084/RARITY-084/GS-084/UPGRADE-084 pending owner approval. Candidate integration and game implementation NOT authorized by this design draft.
 
 2026-11-23: OWNER PERMANENT REQUIREMENT: Every scene, screen, location, map, visual layout and content must be editable on the owner's PC through the native Godot 4.7.2 editor. See [GODOT-EDITABILITY-POLICY.md](GODOT-EDITABILITY-POLICY.md). Each GDD, GitHub candidate review, implementation and acceptance must enforce this. Runtime code may control server-authoritative logic but cannot be the only way to author visual scenes or UI.
+
+2026-11-23: OWNER APPROVED GDD-08.4 LEVEL-084 A, GEAR-084 A, RARITY-084 B, GS-084 B, UPGRADE-084 B. See [GDD-08-04.md](GDD-08-04.md). GH08-016..021 may be studied/tested only in isolation, NO integration. @devbridgelunex memory recorded. All content/editors must be native Godot-editable.
+2026-11-23: Draft [GDD-08-05.md](GDD-08-05.md) on loot, boss rewards and auto-pickup. LOOT-085/DROP-085/BOSS-085/REWARD-085/AUTO-085 NOT APPROVED. GitHub GH08-022 candidate identified for future isolated evaluation. No game code or servers changed.
