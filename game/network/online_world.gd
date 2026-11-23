@@ -27,7 +27,9 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @onready var enemy: LunexTrainingEnemy = $TrainingEnemy
 @onready var watch: LunexGateWatch = $GateWatch
 @onready var stone_guard: LunexTrainingEnemy = $StoneGuard
-@onready var targets: Array[LunexTrainingEnemy] = [enemy, watch, stone_guard]
+@onready var ash_wanderer: LunexTrainingEnemy = $AshWanderer
+@onready var mist_hunter: LunexTrainingEnemy = $MistHunter
+@onready var targets: Array[LunexTrainingEnemy] = [enemy, watch, stone_guard, ash_wanderer, mist_hunter]
 @onready var gates: Array[Marker3D] = [$CourtyardGate, $Passage/ReturnGate]
 @onready var arrivals: Array[Marker3D] = [$CourtyardArrival, $Passage/Arrival]
 @onready var zone_hud: LunexZoneHUD = $HUD/ZoneHUD
@@ -100,6 +102,7 @@ func _ready() -> void:
 	hud_settings.pressed.connect(func() -> void: hud_editor.visible = not hud_editor.visible)
 	hud_editor.layout_changed.connect(_apply_hud_layout)
 	hud_editor.position_changed.connect(_apply_hud_positions)
+	progress_hud.chapter_equip_requested.connect(func(quest_id: String) -> void: _equip_chapter_reward.rpc_id(1, quest_id))
 	_apply_hud_layout(hud_editor.action_slider.value, hud_editor.joystick_slider.value)
 	_apply_hud_positions(hud_editor.action_offset, hud_editor.joystick_offset)
 	class_selection.class_requested.connect(func(class_id: String) -> void: _choose_class.rpc_id(1, class_id))
@@ -138,6 +141,8 @@ func _start_server(args: PackedStringArray) -> void:
 		get_tree().quit(1)
 		return
 	watch.players = players
+	(ash_wanderer as LunexGateWatch).players = players
+	(mist_hunter as LunexGateWatch).players = players
 	for target in targets:
 		(target.get_node("State") as MultiplayerSynchronizer).public_visibility = false
 		target.hit_landed.connect(_record_hit.bind(target.target_id))
@@ -619,7 +624,7 @@ func _chapter_complete_verified(peer_id: int, quest_id: String) -> bool:
 	var profile: String = _profiles.get(peer_id, "")
 	if definition == null or profile.is_empty():
 		return false
-	if not _store.chapter_complete(profile, quest_id, definition.objective_goal):
+	if not _store.chapter_complete(profile, quest_id, definition.objective_goal, definition.reward_experience, definition.reward_item_id):
 		return false
 	_publish_progress(peer_id, profile)
 	return true
@@ -636,6 +641,16 @@ func _accept_quest(index: int) -> void:
 		var profile: String = _profiles[player.peer_id]
 		if _store.accept(profile, quest_rewards[index]):
 			_publish_progress(player.peer_id, profile)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _equip_chapter_reward(quest_id: String) -> void:
+	var player := _sender_player()
+	var definition := _chapter_definition(quest_id)
+	if player == null or definition == null or definition.reward_item_id.is_empty():
+		return
+	var profile: String = _profiles.get(player.peer_id, "")
+	if not profile.is_empty() and _store.equip(profile, "chapter:" + quest_id):
+		_publish_progress(player.peer_id, profile)
 
 @rpc("any_peer", "call_remote", "reliable")
 func _equip_reward(index: int) -> void:

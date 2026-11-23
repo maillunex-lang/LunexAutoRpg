@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="LunexChapterQuestDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/progression/chapter_quest_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = "mist_report"
+prerequisite_id = "watcher_message"
+npc_id = "erin"
+objective_npc_id = "scout"
+objective_goal = 1
+title = "Следы тумана"
+objective_description = "Передай Разведчику сведения о тумане"
+
+reward_experience = 55

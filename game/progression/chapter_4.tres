@@ -11,3 +11,5 @@ objective_npc_id = "scout"
 objective_goal = 1
 title = "Дорога к разведчику"
 objective_description = "Найди Разведчика в Каменном проходе"
+
+reward_experience = 30

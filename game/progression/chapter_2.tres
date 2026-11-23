@@ -11,3 +11,5 @@ objective_npc_id = "mentor"
 objective_goal = 1
 title = "Проверка припасов"
 objective_description = "Вернись к Наставнику с докладом"
+
+reward_experience = 20

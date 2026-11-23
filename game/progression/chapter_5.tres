@@ -11,3 +11,6 @@ objective_npc_id = "mentor"
 objective_goal = 1
 title = "Вести из прохода"
 objective_description = "Вернись во двор и передай вести Наставнику"
+
+reward_experience = 35
+reward_item_id = "ash_guard_charm"

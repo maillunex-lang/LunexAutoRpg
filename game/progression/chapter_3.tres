@@ -11,3 +11,5 @@ objective_npc_id = "quartermaster"
 objective_goal = 1
 title = "Поручение Наставника"
 objective_description = "Уточни у Кладовщика состояние запасов"
+
+reward_experience = 25

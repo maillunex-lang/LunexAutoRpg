@@ -4,6 +4,7 @@ extends Control
 signal accept_requested
 signal equip_requested
 signal quest_route_requested(quest_id: String)
+signal chapter_equip_requested(quest_id: String)
 
 var selected_quest := 0
 var _state: Dictionary = {}
@@ -20,6 +21,11 @@ func _ready() -> void:
 		var idx: int = %ChapterList.get_selected_items()[0] if not %ChapterList.get_selected_items().is_empty() else -1
 		if idx >= 0 and idx < _chapter_definitions.size():
 			quest_route_requested.emit(_chapter_definitions[idx].quest_id)
+	)
+	%ChapterEquip.pressed.connect(func() -> void:
+		var idx: int = %ChapterList.get_selected_items()[0] if not %ChapterList.get_selected_items().is_empty() else -1
+		if idx >= 0 and idx < _chapter_definitions.size():
+			chapter_equip_requested.emit(_chapter_definitions[idx].quest_id)
 	)
 	%ChapterList.item_selected.connect(func(_idx: int) -> void: _refresh_chapters())
 	%Chapters.item_selected.connect(func(index: int) -> void:
@@ -97,3 +103,7 @@ func _refresh_chapters() -> void:
 Выполняется" if status == 1 else "
 Не принято"))
 	%ChapterRoute.disabled = status != 1
+	var reward: Dictionary = _state.get("quests", {}).get("chapter:" + selected.quest_id, {})
+	var owned: String = reward.get("item", "")
+	%ChapterEquip.disabled = owned.is_empty() or reward.get("equipped", "") == owned
+	%ChapterDetail.text += "\nНаграда: %d опыта%s" % [selected.reward_experience, " + " + selected.reward_item_id if not selected.reward_item_id.is_empty() else ""]

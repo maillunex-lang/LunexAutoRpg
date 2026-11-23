@@ -11,3 +11,5 @@ objective_npc_id = "quartermaster"
 objective_goal = 1
 title = "Первые шаги"
 objective_description = "Поговори с Кладовщиком во дворе"
+
+reward_experience = 15

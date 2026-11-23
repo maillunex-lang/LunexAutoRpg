@@ -146,13 +146,17 @@ func chapter_advance(profile: String, quest_id: String, amount: int, goal: int) 
 	_db.query("ROLLBACK")
 	return false
 
-func chapter_complete(profile: String, quest_id: String, goal: int) -> bool:
+func chapter_complete(profile: String, quest_id: String, goal: int, experience: int = 0, item_id: String = "") -> bool:
 	if goal < 1 or goal > 1000 or not _db.query("BEGIN IMMEDIATE"):
 		return false
 	var ok: bool = _db.query_with_bindings(
 		"UPDATE chapter_quests SET state = 2 WHERE profile = ? AND quest_id = ? AND state = 1 AND objective_count >= ?",
 		[profile, quest_id, goal])
 	var changed: bool = ok and _db.query("SELECT changes() AS n") and int(_db.query_result[0].n) == 1
+	if changed and experience >= 0 and experience <= 100000:
+		changed = _db.query_with_bindings("UPDATE profiles SET experience = experience + ? WHERE id = ?", [experience, profile])
+	if changed and not item_id.is_empty() and item_id.length() <= 64:
+		changed = _db.query_with_bindings("INSERT OR IGNORE INTO quest_progress (profile, quest_id, state, item) VALUES (?, ?, ?, ?)", [profile, "chapter:" + quest_id, Quest.COMPLETE, item_id])
 	if changed and _db.query("COMMIT"):
 		return true
 	_db.query("ROLLBACK")

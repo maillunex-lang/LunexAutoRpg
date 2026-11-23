@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3]
+[gd_scene load_steps=35 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -45,10 +45,16 @@
 
 [ext_resource type="PackedScene" path="res://game/mobile/hud_layout_editor.tscn" id="29"]
 
+[ext_resource type="Resource" path="res://game/progression/chapter_6.tres" id="30"]
+[ext_resource type="Resource" path="res://game/progression/chapter_7.tres" id="31"]
+[ext_resource type="Resource" path="res://game/progression/chapter_8.tres" id="32"]
+[ext_resource type="Resource" path="res://game/progression/chapter_9.tres" id="33"]
+[ext_resource type="Resource" path="res://game/progression/chapter_10.tres" id="34"]
+
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
 quest_rewards = Array[ExtResource("13")]([ExtResource("10"), ExtResource("14"), ExtResource("20")])
-chapter_quest_definitions = Array[Resource]([ExtResource("23"), ExtResource("24"), ExtResource("25"), ExtResource("26"), ExtResource("27")])
+chapter_quest_definitions = Array[Resource]([ExtResource("23"), ExtResource("24"), ExtResource("25"), ExtResource("26"), ExtResource("27"), ExtResource("30"), ExtResource("31"), ExtResource("32"), ExtResource("33"), ExtResource("34")])
 
 [node name="Navigation" type="NavigationRegion3D" parent="."]
 navigation_mesh = ExtResource("8")
@@ -106,6 +112,38 @@ position = Vector3(43, 0, 2.0)
 npc_id = "scout"
 display_name = "Разведчик"
 zone_id = 1
+
+[node name="Mara" parent="NPCs" instance=ExtResource("21")]
+position = Vector3(-7, 0, -2)
+npc_id = "mara"
+display_name = "Мара, хранительница лагеря"
+zone_id = 0
+
+[node name="Erin" parent="NPCs" instance=ExtResource("21")]
+position = Vector3(47, 0, -1)
+npc_id = "erin"
+display_name = "Эрин, дозорная"
+zone_id = 1
+
+[node name="AshWanderer" parent="." instance=ExtResource("15")]
+position = Vector3(-7, 0, -6)
+zone_id = 0
+target_id = "ash_wanderer"
+target_name = "Пепельный скиталец"
+max_health = 80
+counter_damage = 12
+counter_radius = 2.0
+respawn_delay = 9.0
+
+[node name="MistHunter" parent="." instance=ExtResource("15")]
+position = Vector3(48, 0, -5)
+zone_id = 1
+target_id = "mist_hunter"
+target_name = "Туманный охотник"
+max_health = 115
+counter_damage = 18
+counter_radius = 2.5
+respawn_delay = 12.0
 
 [node name="Players" type="Node3D" parent="."]
 
