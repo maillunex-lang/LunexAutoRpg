@@ -101,3 +101,9 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Fixed `_request_quest_route`: when an objective/giver/NPC is in another zone, the navigation destination is now the actual objective position rather than the gate marker. Previously the server would disable auto-navigation at the gate before crossing the world boundary.
 - Added `tests/main_world_quest_route_source_smoke.gd` (PASS), and independent ENet server/client integration scripts `tests/main_world_enet_quest_server.gd`, `tests/main_world_enet_quest_client.gd` (UDP 29049, isolated DB). Test server seeds gate-watch completion and assigns a server-owned quest navigation destination at x=84. Without manual steering the player traversed both zone boundaries and reached zone 2 at x=63.119; client received authoritative zone 2. Both processes EXIT 0.
 - The ENet test validates multi-zone navigation using `set_quest_destination`, but not the complete chapter-quest request RPC or objective interaction/reward. Those, Android manual acceptance and CI remain pending.
+
+### Stage 3 complete chapter quest ENet integration
+
+- Added `tests/main_world_enet_chapter_server.gd` and `tests/main_world_enet_chapter_client.gd`, isolated UDP 29050 and SQLite. Test server seeds `gate_watch` completion and chapter prerequisite `courtyard_report`, then activates `scout_contact` using production `chapter_accept`.
+- Real client calls `_request_quest_route.rpc_id(1, "scout_contact")`; server runs real navigation into zone 1; client calls `_request_npc.rpc_id(1, "scout")` near actual NPC; production server validates NPC proximity, records objective and completes chapter quest. Client receives completed chapter state. Both processes EXIT 0; server x=40.631 zone1.
+- This verifies the complete RPC quest route, NPC objective and progression state for one cross-zone chapter. Other chapter objectives, combat and Android acceptance are stage 4/5 scope.
