@@ -120,3 +120,6 @@
 
 2026-11-23: OWNER APPROVED GDD-08.5 LOOT-085 A, DROP-085 B, BOSS-085 B, REWARD-085 B, AUTO-085 B. See [GDD-08-05.md](GDD-08-05.md). @devbridgelunex memory updated. GitHub candidates research and isolated tests only, NO integration. All scenes/UI/locations editable in Godot.
 2026-11-23: Drafted [GDD-08-06.md](GDD-08-06.md) on world/party bosses. WORLD-086/INSTANCE-086/PHASE-086/SCALING-086/RESPAWN-086 are recommendations, NOT APPROVED. GH08-023..026 found for future isolated study; no code/deploy changes.
+
+2026-11-23: OWNER APPROVED GDD-08.6 WORLD-086 B, INSTANCE-086 B, PHASE-086 B, SCALING-086 B, RESPAWN-086 B. See [GDD-08-06.md](GDD-08-06.md). @devbridgelunex memory recorded. GH08-023..026 only STUDY/isolated TEST, NO integration.
+2026-11-23: Drafted [GDD-08-07.md](GDD-08-07.md) groups/matchmaking/coop. PARTY-SIZE-087, MATCH-087, LEADER-087, SYNC-087, SOCIAL-087 awaiting owner approval. GH08-027..030 found on GitHub for study, not audited or integrated. No game code/deploy changes.
