@@ -385,7 +385,17 @@ func _sender_player() -> LunexNetworkPlayer:
 func _request_attack(index: int) -> void:
 	var player := _sender_player()
 	if player != null and player.health > 0 and index >= 0 and index < targets.size() and targets[index].zone_id == player.zone_id:
-		player.set_target(targets[index])
+		var target := targets[index]
+		if target.health <= 0:
+			_skill_feedback.rpc_id(player.peer_id, "target_defeated", player.ability_energy)
+			return
+		if player.global_position.distance_squared_to(target.global_position) > player.attack_range * player.attack_range:
+			_skill_feedback.rpc_id(player.peer_id, "out_of_range", player.ability_energy)
+			return
+		if not player.has_line_of_sight(target.global_position):
+			_skill_feedback.rpc_id(player.peer_id, "no_line_of_sight", player.ability_energy)
+			return
+		player.set_target(target)
 		player.attack_requested = true
 
 @rpc("any_peer", "call_remote", "reliable")
