@@ -123,3 +123,8 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 
 - Added `tests/main_world_enet_visibility_server.gd` and `tests/main_world_enet_visibility_client.gd`, isolated UDP 29051 and SQLite. Two actual ENet clients connect concurrently. Server verifies both players' MultiplayerSynchronizer visibility is initially enabled, simulates a valid boundary transition at x=21.2 using `_update_continuous_zone_membership`, verifies reciprocal visibility disabled, then returns player to x=20.8 and verifies reciprocal visibility restored. Server and both clients EXIT 0.
 - The boundary positions are set by the test server to isolate visibility behavior from navigation timing; real movement across boundaries is separately verified by earlier ENet tests. The test does not claim a complete client-side render observation or reconnect persistence.
+
+### Stage 4 actual ENet reconnect and persistent rewards
+
+- `tests/main_world_enet_reconnect_server.gd` and `tests/main_world_enet_reconnect_client.gd`: separate server and two sequential client processes on isolated UDP 29052/SQLite. Both clients use same stable token. Server seeds gate-watch completion, `first_steps` completion, XP=25 and gold=40, publishes progress. First client verifies receipt and exits, second reconnects under same profile and independently verifies receipt of all progress. Server verifies identical profile and persisted database state. All three processes EXIT 0.
+- Player world position is currently assigned from spawn slot on join; no persistent world-coordinate restore is claimed. Boss and inventory regressions have passed as separate tests; no full Android acceptance or CI green confirmation yet.
