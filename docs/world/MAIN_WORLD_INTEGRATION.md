@@ -51,3 +51,9 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Added native Godot-editable NavigationRegion3D / NavigationMesh to each of four inter-zone road scenes, preserving collision and geometry.
 - `tests/main_world_navbridge_smoke.gd` validates navigation path across each corridor and separately checks full path from first to last zone. Four local corridor checks PASS, **full five-zone path currently FAILS (full_world_path=false)**. This is an explicit outstanding integration blocker, not a seamless world.
 - Existing zone navmeshes must be rebuilt/stitched safely with obstacles and world offsets before server-authoritative continuous navigation can be enabled. Avoid naive full-world walkable plane because it would let autopilot walk through geometry.
+
+### Seam diagnosis (2026-11-23)
+
+- Checked corridor NavigationMesh triangle winding and tested explicit seam NavigationLink3D candidates. Neither produced a connected full-world path; temporary seam links were removed rather than leaving unverified obstacle-bypassing shortcuts.
+- Full-world path currently stops at x≈10.8 in the starting zone. This indicates the legacy baked region edges do not stitch to the new corridor navmesh despite overlapping road geometry. Next implementation must rebuild/stitch navigation surfaces at exact matching boundaries, verify complete path endpoints, and run a live player collision test. The failed condition is intentionally preserved in diagnostics.
+- Triangle-winding experiment broke all four local corridor path checks; reverted to last verified mesh orientation. Retest: four corridor paths PASS, full-world path remains false. No unverified navigation workaround shipped.
