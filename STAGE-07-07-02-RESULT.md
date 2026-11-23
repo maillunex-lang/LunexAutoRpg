@@ -24,3 +24,11 @@
 - Тестовый сервер 7.6 (UDP 28766) и production (UDP 28740) не обновлены; текущая опубликованная APK не включает новый выбор класса.
 - Для ручной проверки 7.7.2 потребуется отдельное разрешение на развёртывание изолированной сборки и APK либо отдельный тестовый стенд.
 - 7.7.3 не начат.
+
+## Изолированное развёртывание для ручной приёмки
+- Каталог: `/opt/lunex-autorpg/stage772` (отдельная копия с изменённым портом по умолчанию в экране входа).
+- Сервис: `lunex-autorpg-stage772-test.service`, отдельная SQLite `/var/lib/lunex-autorpg-stage772-test/progress.sqlite`, UDP `28777`.
+- APK: https://rikagro.ru/download/LunexAutoRpg-0.7.7.2-class-test.apk (58 MiB), SHA256 `5e5b4401ac7649d9f6ffd03bbdb15341755de6800b7d6c92505d93a9d65bf176`.
+- Проверено: Android export, apksigner verify, nginx -t, HTTP HEAD 200, service active, UDP 28777 listening.
+- На Android ещё не выполнен ручной приёмочный тест. Изолированная SQLite содержит только тестовые профили.
+- Сервисы 7.5 production (UDP 28740) и 7.6 test (UDP 28766) не изменялись.
