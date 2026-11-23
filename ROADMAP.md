@@ -117,3 +117,6 @@
 
 2026-11-23: OWNER APPROVED GDD-08.4 LEVEL-084 A, GEAR-084 A, RARITY-084 B, GS-084 B, UPGRADE-084 B. See [GDD-08-04.md](GDD-08-04.md). GH08-016..021 may be studied/tested only in isolation, NO integration. @devbridgelunex memory recorded. All content/editors must be native Godot-editable.
 2026-11-23: Draft [GDD-08-05.md](GDD-08-05.md) on loot, boss rewards and auto-pickup. LOOT-085/DROP-085/BOSS-085/REWARD-085/AUTO-085 NOT APPROVED. GitHub GH08-022 candidate identified for future isolated evaluation. No game code or servers changed.
+
+2026-11-23: OWNER APPROVED GDD-08.5 LOOT-085 A, DROP-085 B, BOSS-085 B, REWARD-085 B, AUTO-085 B. See [GDD-08-05.md](GDD-08-05.md). @devbridgelunex memory updated. GitHub candidates research and isolated tests only, NO integration. All scenes/UI/locations editable in Godot.
+2026-11-23: Drafted [GDD-08-06.md](GDD-08-06.md) on world/party bosses. WORLD-086/INSTANCE-086/PHASE-086/SCALING-086/RESPAWN-086 are recommendations, NOT APPROVED. GH08-023..026 found for future isolated study; no code/deploy changes.
