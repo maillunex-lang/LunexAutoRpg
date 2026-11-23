@@ -1,0 +1,105 @@
+name: Godot CI and Android APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GODOT_VERSION: "4.7.2"
+      GODOT_BIN: ${{ github.workspace }}/.ci-tools/godot
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Prepare Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Download Godot 4.7.2 and Android export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .ci-tools
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip" \
+            -o .ci-tools/godot.zip
+          unzip -q .ci-tools/godot.zip -d .ci-tools
+          mv .ci-tools/Godot_v4.7.2-stable_linux.x86_64 .ci-tools/godot
+          chmod +x .ci-tools/godot
+          .ci-tools/godot --version
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz" \
+            -o .ci-tools/templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          unzip -p .ci-tools/templates.tpz templates/android_debug.apk > "$HOME/.local/share/godot/export_templates/4.7.2.stable/android_debug.apk"
+          unzip -p .ci-tools/templates.tpz templates/android_release.apk > "$HOME/.local/share/godot/export_templates/4.7.2.stable/android_release.apk"
+          test -s "$HOME/.local/share/godot/export_templates/4.7.2.stable/android_debug.apk"
+
+      - name: Import and validate project
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 180 .ci-tools/godot --headless --path . --editor --quit
+
+      - name: Run Godot regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test in \
+            stage818_zones stage819_enemy_quests stage820_boss \
+            stage821_equipment stage822_rarity_gs stage823_upgrade \
+            stage817_chapter_world stage817_chapter_quests \
+            stage817_chapter_combat stage817_chapter_rewards \
+            stage816_auto_context stage816_client_persistence; do
+            echo "::group::$test"
+            timeout 60 .ci-tools/godot --headless --path . --script "res://tests/$test.gd"
+            echo "::endgroup::"
+          done
+
+      - name: Export Android debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          timeout 300 .ci-tools/godot --headless --path . --export-debug Android build/LunexAutoRpg-CI-debug.apk
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          from zipfile import ZipFile
+          p = Path("build/LunexAutoRpg-CI-debug.apk")
+          with ZipFile(p) as z:
+              assert z.testzip() is None
+              names = z.namelist()
+              assert "AndroidManifest.xml" in names
+              assert "assets/project.binary" in names
+              assert any(n.startswith("lib/arm64-v8a/") for n in names)
+          print("APK bytes:", p.stat().st_size)
+          print("SHA256:", hashlib.sha256(p.read_bytes()).hexdigest())
+          PY
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LunexAutoRpg-Android-debug-${{ github.run_number }}
+          path: build/LunexAutoRpg-CI-debug.apk
+          if-no-files-found: error
+          retention-days: 14
