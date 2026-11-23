@@ -1,4 +1,4 @@
-[gd_scene load_steps=57 format=3]
+[gd_scene load_steps=59 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/world/training_zone_open.tscn" id="2"]
@@ -74,6 +74,8 @@
 
 [ext_resource type="PackedScene" path="res://game/world/zone_corridor.tscn" id="world_corridor"]
 [ext_resource type="Script" path="res://game/world/world_visual_streamer.gd" id="world_visual_streamer"]
+[ext_resource type="Script" path="res://game/world/streamed_decor.gd" id="streamed_decor"]
+[ext_resource type="PackedScene" path="res://game/world/roadside_marker.tscn" id="roadside_marker"]
 
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
@@ -141,6 +143,11 @@ position = Vector3(0, 0, -7.3)
 
 [node name="MistBellBackGate" parent="MistBell" instance=ExtResource("18")]
 position = Vector3(0, 0, -7.3)
+
+[node name="StreamedDecor" type="Node3D" parent="."]
+script = ExtResource("streamed_decor")
+chunk_scenes = Array[PackedScene]([ExtResource("roadside_marker"), ExtResource("roadside_marker"), ExtResource("roadside_marker"), ExtResource("roadside_marker")])
+chunk_centers = PackedVector3Array(21, 0, -4, 63, 0, -4, 105, 0, -4, 147, 0, -4)
 
 [node name="WorldVisualStreamer" type="Node3D" parent="."]
 script = ExtResource("world_visual_streamer")

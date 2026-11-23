@@ -39,3 +39,9 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - `WorldVisualStreamer` is now wired into the actual OnlineWorld scene. It updates on clients with a valid local player and toggles geometry visibility by distance, leaving collision, NPC simulation, navigation meshes, and server world intact.
 - The new `tests/main_world_visual_streaming_smoke.gd` verifies distant-zone culling, destination restoration and preserved NavigationRegion3D navmesh. PASS.
 - This is **visibility culling, not asynchronous PackedScene streaming or RAM release**. Visual scenes remain in memory. The stage 2 objective of true chunk streaming and connected navigation remains open; do not claim FPS/RAM gains until measured on Android.
+
+### Stage 2 continuation: actual decorative instance streaming
+
+- Added `LunexStreamedDecor` component in real OnlineWorld. Four native editable `roadside_marker.tscn` decorative instances are created on proximity and queue_free'd beyond a hysteresis distance. Physics roads and navmesh stay persistent. `tests/main_world_decor_stream_smoke.gd` PASS.
+- This is **real visual instance load/unload** but PackedScene resources are preloaded and instantiated on the main thread, not asynchronous disk streaming. It currently covers four lightweight decorative road markers, not terrain/entire zone geometry. Memory and frame-time impact not measured.
+- The world is still NOT seamless for live players: cross-zone navigation meshes and authoritative server zone transitions remain unfinished. Task 2 remains open.
