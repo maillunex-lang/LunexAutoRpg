@@ -2,8 +2,8 @@ class_name LunexFollowCamera
 extends Camera3D
 
 @export var target: Node3D
-@export var follow_offset := Vector3(0, 8, 9)
-@export var look_offset := Vector3(0, 0.8, 0)
+@export var follow_offset := Vector3(0, 7.2, 6.5)
+@export var look_offset := Vector3(0, 1.0, 0)
 
 @export_range(0.1, 30.0, 0.1) var follow_speed := 10.0
 
