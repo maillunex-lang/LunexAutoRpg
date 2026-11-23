@@ -45,3 +45,9 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Added `LunexStreamedDecor` component in real OnlineWorld. Four native editable `roadside_marker.tscn` decorative instances are created on proximity and queue_free'd beyond a hysteresis distance. Physics roads and navmesh stay persistent. `tests/main_world_decor_stream_smoke.gd` PASS.
 - This is **real visual instance load/unload** but PackedScene resources are preloaded and instantiated on the main thread, not asynchronous disk streaming. It currently covers four lightweight decorative road markers, not terrain/entire zone geometry. Memory and frame-time impact not measured.
 - The world is still NOT seamless for live players: cross-zone navigation meshes and authoritative server zone transitions remain unfinished. Task 2 remains open.
+
+### Stage 2 continuation: navigation corridor regions and connectivity diagnostic
+
+- Added native Godot-editable NavigationRegion3D / NavigationMesh to each of four inter-zone road scenes, preserving collision and geometry.
+- `tests/main_world_navbridge_smoke.gd` validates navigation path across each corridor and separately checks full path from first to last zone. Four local corridor checks PASS, **full five-zone path currently FAILS (full_world_path=false)**. This is an explicit outstanding integration blocker, not a seamless world.
+- Existing zone navmeshes must be rebuilt/stitched safely with obstacles and world offsets before server-authoritative continuous navigation can be enabled. Avoid naive full-world walkable plane because it would let autopilot walk through geometry.

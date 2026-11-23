@@ -181,3 +181,4 @@ Integration design: `docs/world/MAIN_WORLD_INTEGRATION.md`. No proprietary Era o
 - [~] MAIN-WORLD-001 stage 2 continued: five editable open-boundary zone variants integrated with four collidable roads; geometry smoke PASS. Navigation meshes, real streaming and server zone transitions pending.
 - [~] MAIN-WORLD-001 stage 2: integrated client-side visual-distance culling in actual OnlineWorld, with headless regression PASS; asynchronous scene loading and cross-zone navmesh still outstanding.
 - [~] MAIN-WORLD-001 stage 2: client decorative instances now genuinely instantiate/unload with distance+hysteresis (four editable roadside markers), smoke PASS. Async terrain streaming and continuous navigation still pending.
+- [~] MAIN-WORLD-001 stage 2: four editable road NavigationRegion3D added; individual bridge paths PASS, **full-world path FAILS**, navmesh stitching/rebake required. Do not mark seamless complete.
