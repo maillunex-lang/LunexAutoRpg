@@ -97,3 +97,5 @@
 2026-11-23: Stage 7.7.8 live server smoke supplement: 7/7 two-client Godot ENet checks passed on UDP 28788; authoritative movement, wall collision, reconnect and error recovery verified. Manual Android combat/healing still pending. No new stage started.
 
 2026-11-23: GDD-08.1 dark fantasy concept C confirmed; owner approved WORLD-081 B (one map/five zones), TERRAIN-081 A (native Godot Mesh scenes), ART-081 B (Stylized Dark Fantasy). [GDD-08-01.md](GDD-08-01.md) records the design, eight proposed stages and five GitHub candidates for study/compatibility only. **No GDD-08 implementation or candidate integration authorized** until manual 7.7.8 acceptance and separate permission.
+
+2026-11-23: GDD-08.2 monster/AI/spawn design drafted for approval in [GDD-08-02.md](GDD-08-02.md), including GitHub candidate study GH08-003/004/006-009. AI-082, SPAWN-082, AGGRO-082, BOSS-082 are proposed, NOT approved. **No code/integration/deployment; stage 7.7.8 manual acceptance remains pending.**
