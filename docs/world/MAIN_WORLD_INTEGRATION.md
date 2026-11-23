@@ -113,3 +113,8 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Initial content regression suite: chapter quests (817), enemy quests (819), boss (820), full chapter/boss (826), monsters (832), side-quest authority (842), inventory (844) all exit 0.
 - Existing `stage840_content_story_multizone.gd` initially failed because it asserted the old teleport-per-gate behavior. Updated it to assert the seamless-world contract: full-world final giver destination, no player teleport/zone mutation, route stays active. Revised test PASS.
 - Content verification remains ongoing: real multi-client visibility, boss interactions, and persistence across zone boundaries require integration testing before stage 4 completion.
+
+### Stage 4 persistent progression after reconnect
+
+- `tests/main_world_crosszone_persistence.gd` creates isolated SQLite profile, completes `gate_watch`, chapter quest `first_steps`, grants XP/gold, closes DB, opens a fresh `LunexProgressStore` instance and verifies all four values survived reopen. PASS.
+- This confirms persistence of zone-unlock prerequisite and chapter rewards across DB reconnect; it does not prove zone position is persisted or full network reconnect behavior. Multiplayer visibility and full reconnect remain outstanding.
