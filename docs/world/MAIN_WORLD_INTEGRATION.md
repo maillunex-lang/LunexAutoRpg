@@ -26,3 +26,10 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Added `game/world/world_visual_streamer.gd`, an opt-in visual-distance component which never unloads physics, navmesh or authoritative AI. Not yet wired to player visibility, pending safe network lifecycle handling.
 - Godot 4.7.2 import and stage844 regression pass. **Do not consider the world seamless yet**: original CSG perimeter walls and disconnected navmeshes still block physical cross-zone traversal, and gate RPC still teleports players.
 - No production deploy or database changes. Next task within stage 2: editor-editable openings, continuous navmesh and collision checks, then server-authoritative zone transition changes.
+
+### Stage 2 continuation: traversable collision geometry
+
+- Added native Godot editable `game/world/*_open.tscn` scene variants of all five existing zone geometries, preserving original assets unchanged. East/west perimeter walls removed only in integration variants, while north/south boundaries remain.
+- Main `online_world.tscn` references these open scene variants and the four physical collision roads. Geometry smoke `tests/main_world_geometry_smoke.gd` PASS: all four corridor collisions and wall openings verified.
+- Godot 4.7.2 editor import PASS and stage844 regression PASS.
+- **Not yet seamless for actual player movement:** navmesh still disconnected and server still teleports via gate RPC. Visual streamer not wired into main game because visual hide and collision lifecycle require safe separation. Stage 2 remains IN PROGRESS.

@@ -178,3 +178,4 @@
 Integration design: `docs/world/MAIN_WORLD_INTEGRATION.md`. No proprietary Era of Celestials assets or source code.
 
 - [~] MAIN-WORLD-001 stage 2 partial: editable road/collision corridor scenes placed in the real OnlineWorld; existing walls/navmeshes/gate RPC still require conversion, so not yet seamless.
+- [~] MAIN-WORLD-001 stage 2 continued: five editable open-boundary zone variants integrated with four collidable roads; geometry smoke PASS. Navigation meshes, real streaming and server zone transitions pending.
