@@ -112,3 +112,5 @@
 
 2026-11-23: OWNER MANUALLY ACCEPTED stage 7.7.8 (four-class Android/online combat). Acceptance gate cleared; production and stage778 test remain unchanged pending next deployment authorization. Proceed to GDD-08 in stage-gated order.
 2026-11-23: Drafted [GDD-08-04.md](GDD-08-04.md): level, equipment, rarity, GS and upgrades, with GH08-016..021 GitHub candidates. LEVEL-084/GEAR-084/RARITY-084/GS-084/UPGRADE-084 pending owner approval. Candidate integration and game implementation NOT authorized by this design draft.
+
+2026-11-23: OWNER PERMANENT REQUIREMENT: Every scene, screen, location, map, visual layout and content must be editable on the owner's PC through the native Godot 4.7.2 editor. See [GODOT-EDITABILITY-POLICY.md](GODOT-EDITABILITY-POLICY.md). Each GDD, GitHub candidate review, implementation and acceptance must enforce this. Runtime code may control server-authoritative logic but cannot be the only way to author visual scenes or UI.
