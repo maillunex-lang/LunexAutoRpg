@@ -13,4 +13,5 @@ title = "Припасы для лагеря"
 objective_description = "Попроси у Кладовщика припасы"
 story_intro = "Лагерь пережил нападение. Кладовщик предлагает пополнить припасы и подготовиться к переходу в дальние земли."
 
+reward_item_id = "starter_accessory"
 reward_experience = 45

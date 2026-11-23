@@ -13,4 +13,5 @@ title = "Дорога к разведчику"
 objective_description = "Найди Разведчика в Каменном проходе"
 story_intro = "За воротами слышны удары оружия и шорох камня. Разведчик ждёт помощи на границе Каменного прохода."
 
+reward_item_id = "starter_gloves"
 reward_experience = 30
