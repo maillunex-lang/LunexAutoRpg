@@ -4,6 +4,9 @@ extends Control
 signal connect_requested(address: String, port: int, player_name: String)
 signal disconnect_requested
 
+const DEFAULT_ADDRESS := "78.17.214.93"
+const DEFAULT_PORT := 28801
+
 @onready var address_field: LineEdit = %Address
 @onready var port_field: SpinBox = %Port
 @onready var name_field: LineEdit = %PlayerName
@@ -11,6 +14,8 @@ signal disconnect_requested
 @onready var connect_button: Button = %Connect
 
 func _ready() -> void:
+	address_field.text = DEFAULT_ADDRESS
+	port_field.value = DEFAULT_PORT
 	connect_button.pressed.connect(_request_connection)
 	%Leave.pressed.connect(func() -> void: disconnect_requested.emit())
 	name_field.text_submitted.connect(func(_value: String) -> void: _request_connection())
