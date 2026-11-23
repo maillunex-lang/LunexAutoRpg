@@ -50,19 +50,18 @@ func run() -> void:
 		push_error("STAGE840 final giver quest incorrectly locked")
 		quit(1)
 		return
-	player.set_quest_destination(world.gates[1].global_position)
+	# Seamless-world contract: no zone mutation in quest route planning.
+	player.set_quest_destination(giver.global_position)
 	world._quest_routes[2] = "giver:bell_trial"
-	for expected_zone in [2, 3, 4]:
-		player.set_quest_destination(world.gates[player.zone_id].global_position)
-		player.global_position = world.gates[player.zone_id].global_position
-		world._advance_quest_routes()
-		if player.zone_id != expected_zone:
-			push_error("STAGE840 wrong zone %d expected %d" % [player.zone_id, expected_zone])
-			quit(1)
-			return
-	if world._quest_routes.has(2) or not player.quest_auto_enabled or player.quest_destination.distance_to(giver.global_position) > 0.1:
-		push_error("STAGE840 did not finish at final quest giver")
+	var before_position := player.global_position
+	world._advance_quest_routes()
+	if player.zone_id != 1 or player.global_position.distance_to(before_position) > 0.001:
+		push_error("STAGE840 route planner teleported player")
 		quit(1)
 		return
-	print("STAGE840_GIVER_ZONES=PASS route 1->2->3->4 final NPC destination")
+	if not world._quest_routes.has(2) or not player.quest_auto_enabled or player.quest_destination.distance_to(giver.global_position) > 0.1:
+		push_error("STAGE840 did not retain full-world destination")
+		quit(1)
+		return
+	print("STAGE840_GIVER_ZONES=PASS no_teleport=true route_1_to_4=true final_npc_destination=true")
 	quit(0)

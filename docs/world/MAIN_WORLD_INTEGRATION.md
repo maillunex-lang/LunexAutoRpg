@@ -107,3 +107,9 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Added `tests/main_world_enet_chapter_server.gd` and `tests/main_world_enet_chapter_client.gd`, isolated UDP 29050 and SQLite. Test server seeds `gate_watch` completion and chapter prerequisite `courtyard_report`, then activates `scout_contact` using production `chapter_accept`.
 - Real client calls `_request_quest_route.rpc_id(1, "scout_contact")`; server runs real navigation into zone 1; client calls `_request_npc.rpc_id(1, "scout")` near actual NPC; production server validates NPC proximity, records objective and completes chapter quest. Client receives completed chapter state. Both processes EXIT 0; server x=40.631 zone1.
 - This verifies the complete RPC quest route, NPC objective and progression state for one cross-zone chapter. Other chapter objectives, combat and Android acceptance are stage 4/5 scope.
+
+### Stage 4 content regression kickoff
+
+- Initial content regression suite: chapter quests (817), enemy quests (819), boss (820), full chapter/boss (826), monsters (832), side-quest authority (842), inventory (844) all exit 0.
+- Existing `stage840_content_story_multizone.gd` initially failed because it asserted the old teleport-per-gate behavior. Updated it to assert the seamless-world contract: full-world final giver destination, no player teleport/zone mutation, route stays active. Revised test PASS.
+- Content verification remains ongoing: real multi-client visibility, boss interactions, and persistence across zone boundaries require integration testing before stage 4 completion.
