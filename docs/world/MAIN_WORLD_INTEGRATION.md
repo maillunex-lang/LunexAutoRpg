@@ -95,3 +95,9 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Added independent server/client scripts `tests/main_world_enet_unlocked_server.gd` and `tests/main_world_enet_unlocked_client.gd` on isolated UDP 29048 and SQLite. Test server seeds the completed `gate_watch` quest for the connected profile, then observes real client input, server-authoritative movement and transition to zone 1 at x=21.123.
 - Both separate Godot processes EXIT 0: server `MAIN_WORLD_ENET_UNLOCKED_SERVER=PASS`, client `MAIN_WORLD_ENET_UNLOCKED_CLIENT=PASS received_authoritative_zone=1`.
 - Together with previous locked-boundary ENet test, verifies gate quest condition and actual zone synchronization on both peers. Cross-zone quest auto-navigation, longer routes, Android acceptance and CI still outstanding.
+
+### Stage 3 quest navigation correction and ENet multi-zone smoke
+
+- Fixed `_request_quest_route`: when an objective/giver/NPC is in another zone, the navigation destination is now the actual objective position rather than the gate marker. Previously the server would disable auto-navigation at the gate before crossing the world boundary.
+- Added `tests/main_world_quest_route_source_smoke.gd` (PASS), and independent ENet server/client integration scripts `tests/main_world_enet_quest_server.gd`, `tests/main_world_enet_quest_client.gd` (UDP 29049, isolated DB). Test server seeds gate-watch completion and assigns a server-owned quest navigation destination at x=84. Without manual steering the player traversed both zone boundaries and reached zone 2 at x=63.119; client received authoritative zone 2. Both processes EXIT 0.
+- The ENet test validates multi-zone navigation using `set_quest_destination`, but not the complete chapter-quest request RPC or objective interaction/reward. Those, Android manual acceptance and CI remain pending.

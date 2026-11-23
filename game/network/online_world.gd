@@ -724,8 +724,7 @@ func _request_quest_route(quest_id: String) -> void:
 			player.set_quest_destination(giver.global_position)
 			_quest_route_notice.rpc_id(player.peer_id, "Следующее задание у: " + giver.display_name)
 		else:
-			var gate := back_gates[player.zone_id] if giver.zone_id < player.zone_id else gates[player.zone_id]
-			player.set_quest_destination(gate.global_position)
+			player.set_quest_destination(giver.global_position)
 			_quest_routes[player.peer_id] = "giver:" + quest_id
 			_quest_route_notice.rpc_id(player.peer_id, "Автопуть к персонажу через ворота.")
 		return
@@ -740,8 +739,7 @@ func _request_quest_route(quest_id: String) -> void:
 				player.set_quest_destination(target.global_position)
 				_quest_route_notice.rpc_id(player.peer_id, "Автопуть: " + target.target_name)
 			else:
-				var gate := back_gates[player.zone_id] if target.zone_id < player.zone_id else gates[player.zone_id]
-				player.set_quest_destination(gate.global_position)
+				player.set_quest_destination(target.global_position)
 				_quest_route_notice.rpc_id(player.peer_id, "Автопуть через ворота к заданию.")
 			return
 	for candidate in npcs.get_children():
@@ -752,8 +750,7 @@ func _request_quest_route(quest_id: String) -> void:
 			player.set_quest_destination(npc.global_position)
 			_quest_route_notice.rpc_id(player.peer_id, "Автопуть: " + npc.display_name)
 		else:
-			var gate := back_gates[player.zone_id] if npc.zone_id < player.zone_id else gates[player.zone_id]
-			player.set_quest_destination(gate.global_position)
+			player.set_quest_destination(npc.global_position)
 			_quest_route_notice.rpc_id(player.peer_id, "Автопуть через локации к заданию.")
 		return
 
