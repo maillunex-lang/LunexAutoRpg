@@ -93,6 +93,7 @@ var _tap_active := false
 var _pvp_instances: Dictionary[int, bool] = {}
 var _dangerous_boss_phases: Dictionary[int, bool] = {}
 var _spawn_slots: Dictionary[int, int] = {}
+var _quest_routes: Dictionary[int, String] = {}
 
 func _ready() -> void:
 	combat.targets = targets
@@ -290,6 +291,7 @@ func _player_spawned(node: Node) -> void:
 
 func _remove_player(id: int) -> void:
 	_spawn_slots.erase(id)
+	_quest_routes.erase(id)
 	_profiles.erase(id)
 	_pvp_instances.erase(id)
 	_dangerous_boss_phases.erase(id)
@@ -328,6 +330,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	_tap_active = true
 
 func _physics_process(delta: float) -> void:
+	if multiplayer.is_server():
+		_advance_quest_routes()
 	if _metrics_enabled:
 		_sample_server(delta)
 	if not is_instance_valid(_local_player):
@@ -543,6 +547,67 @@ func _class_changed(class_id: String, player_id: int) -> void:
 	if player != null:
 		player.update_class(class_id)
 
+func _quest_goal_zone(definition: LunexChapterQuestDefinition) -> int:
+	if not definition.objective_enemy_id.is_empty():
+		for target in targets:
+			if target.target_id == definition.objective_enemy_id:
+				return target.zone_id
+	else:
+		for candidate in npcs.get_children():
+			var npc := candidate as LunexNpcActor
+			if npc.npc_id == definition.objective_npc_id:
+				return npc.zone_id
+	return -1
+
+func _advance_quest_routes() -> void:
+	for peer_id in _quest_routes.keys():
+		var player := players.get_node_or_null(str(peer_id)) as LunexNetworkPlayer
+		var definition := _chapter_definition(_quest_routes[peer_id])
+		if player == null or definition == null or player.health <= 0 or not _profiles.has(peer_id) or not _store.is_chapter_active(_profiles[peer_id], definition.quest_id):
+			_quest_routes.erase(peer_id)
+			continue
+		var goal_zone := _quest_goal_zone(definition)
+		if goal_zone < 0 or goal_zone == player.zone_id:
+			_quest_routes.erase(peer_id)
+			continue
+		# Player movement cancels quest autopilot; do not override manual steering.
+		if not player.quest_auto_enabled:
+			_quest_routes.erase(peer_id)
+			continue
+		var current := player.zone_id
+		var forward := goal_zone > current
+		var gate := gates[current] if forward else back_gates[current]
+		if player.global_position.distance_to(gate.global_position) > gate_distance:
+			continue
+		if current == 0:
+			var state := _store.read_profile(_profiles[peer_id])
+			if state.get("quests", {}).get("gate_watch", {}).get("quest") != LunexProgressStore.Quest.COMPLETE:
+				_quest_routes.erase(peer_id)
+				_travel_notice.rpc_id(peer_id, "Сначала завершите Дозор у ворот.")
+				continue
+		var next := current + 1 if forward else current - 1
+		var arrival := arrivals[next].global_position
+		arrival.x += float(_spawn_slots.get(peer_id, 0) % 4) * 0.65 - 0.975
+		player.enter_zone(next, arrival)
+		_arrive.rpc_id(peer_id, next, arrival)
+		_update_zone_visibility(player)
+		if next == goal_zone:
+			_quest_routes.erase(peer_id)
+			if not definition.objective_enemy_id.is_empty():
+				for target in targets:
+					if target.target_id == definition.objective_enemy_id:
+						player.set_quest_destination(target.global_position)
+						break
+			else:
+				for candidate in npcs.get_children():
+					var npc := candidate as LunexNpcActor
+					if npc.npc_id == definition.objective_npc_id:
+						player.set_quest_destination(npc.global_position)
+						break
+		else:
+			var next_gate := gates[next] if forward else back_gates[next]
+			player.set_quest_destination(next_gate.global_position)
+
 @rpc("any_peer", "call_remote", "reliable")
 func _request_quest_route(quest_id: String) -> void:
 	var player := _sender_player()
@@ -554,6 +619,10 @@ func _request_quest_route(quest_id: String) -> void:
 	var profile: String = _profiles.get(player.peer_id, "")
 	if profile.is_empty() or not _store.is_chapter_active(profile, quest_id):
 		return
+	_quest_routes.erase(player.peer_id)
+	var goal_zone := _quest_goal_zone(definition)
+	if goal_zone >= 0 and goal_zone != player.zone_id:
+		_quest_routes[player.peer_id] = quest_id
 	if not definition.objective_enemy_id.is_empty():
 		for target in targets:
 			if target.target_id != definition.objective_enemy_id:
@@ -564,7 +633,7 @@ func _request_quest_route(quest_id: String) -> void:
 			else:
 				var gate := back_gates[player.zone_id] if target.zone_id < player.zone_id else gates[player.zone_id]
 				player.set_quest_destination(gate.global_position)
-				_quest_route_notice.rpc_id(player.peer_id, "Дойди до ворот и перейди вручную.")
+				_quest_route_notice.rpc_id(player.peer_id, "Автопуть через ворота к заданию.")
 			return
 	for candidate in npcs.get_children():
 		var npc := candidate as LunexNpcActor
@@ -576,7 +645,7 @@ func _request_quest_route(quest_id: String) -> void:
 		else:
 			var gate := back_gates[player.zone_id] if npc.zone_id < player.zone_id else gates[player.zone_id]
 			player.set_quest_destination(gate.global_position)
-			_quest_route_notice.rpc_id(player.peer_id, "Автопуть до ворот. Переход в другую локацию вручную.")
+			_quest_route_notice.rpc_id(player.peer_id, "Автопуть через локации к заданию.")
 		return
 
 @rpc("authority", "call_remote", "reliable")
