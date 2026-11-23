@@ -11,3 +11,9 @@ extends Resource
 
 @export_range(0, 100000) var reward_experience := 15
 @export var reward_item_id := ""
+
+@export var objective_enemy_id := ""
+
+@export_range(1, 5) var reward_rarity := 1
+
+@export_range(0, 100000) var reward_gold := 50

@@ -105,6 +105,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Надеть сюжетную награду"
 
+[node name="UpgradeItem" type="Button" parent="Panel/Margin/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Улучшить выбранный предмет"
+
 [node name="Close" type="Button" parent="Panel/Margin/Fields"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 39)

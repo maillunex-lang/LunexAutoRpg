@@ -5,6 +5,7 @@ signal accept_requested
 signal equip_requested
 signal quest_route_requested(quest_id: String)
 signal chapter_equip_requested(quest_id: String)
+signal upgrade_requested(item_id: String)
 
 var selected_quest := 0
 var _state: Dictionary = {}
@@ -26,6 +27,13 @@ func _ready() -> void:
 		var idx: int = %ChapterList.get_selected_items()[0] if not %ChapterList.get_selected_items().is_empty() else -1
 		if idx >= 0 and idx < _chapter_definitions.size():
 			chapter_equip_requested.emit(_chapter_definitions[idx].quest_id)
+	)
+	%UpgradeItem.pressed.connect(func() -> void:
+		var idx: int = %ChapterList.get_selected_items()[0] if not %ChapterList.get_selected_items().is_empty() else -1
+		if idx >= 0 and idx < _chapter_definitions.size():
+			var item_id: String = _chapter_definitions[idx].reward_item_id
+			if not item_id.is_empty():
+				upgrade_requested.emit(item_id)
 	)
 	%ChapterList.item_selected.connect(func(_idx: int) -> void: _refresh_chapters())
 	%Chapters.item_selected.connect(func(index: int) -> void:
@@ -65,7 +73,7 @@ func _refresh() -> void:
 	var equipped: String = status.get("equipped", "")
 	%Quest.text = ["Доступно", reward.objective, "Завершено", "Сначала завершите предыдущее задание"][quest]
 	var level := 2 if _state.experience >= _level_two_experience else 1
-	%Experience.text = "Уровень %d · Опыт %d" % [level, _state.experience]
+	%Experience.text = "Уровень %d · Опыт %d · Золото %d" % [level, _state.experience, int(_state.get("gold", 0))]
 	%Item.text = "Награда: %d опыта" % reward.experience if reward.item_id.is_empty() else "Награда: %s · %d опыта" % [reward.item_name, reward.experience]
 	var slots := PackedStringArray()
 	for definition in _rewards:
@@ -74,7 +82,10 @@ func _refresh() -> void:
 		var row: Dictionary = quests.get(definition.quest_id, {})
 		var equipped_item: String = row.get("equipped", "")
 		slots.append("%s: %s" % [definition.slot_name, definition.item_name if equipped_item == definition.item_id else (equipped_item if not equipped_item.is_empty() else "пусто")])
-	%Slot.text = "\n".join(slots)
+	var equipment: Dictionary = _state.get("equipped_slots", {})
+	for slot_id in LunexProgressStore.EQUIPMENT_SLOTS:
+		slots.append("%s: %s" % [slot_id, str(equipment.get(slot_id, "пусто"))])
+	%Slot.text = "GS: %d\n%s" % [int(_state.get("gear_score", 0)), "\n".join(slots)]
 	%Accept.disabled = quest != LunexProgressStore.Quest.AVAILABLE
 	%Equip.disabled = item.is_empty() or equipped == item
 
@@ -106,4 +117,5 @@ func _refresh_chapters() -> void:
 	var reward: Dictionary = _state.get("quests", {}).get("chapter:" + selected.quest_id, {})
 	var owned: String = reward.get("item", "")
 	%ChapterEquip.disabled = owned.is_empty() or reward.get("equipped", "") == owned
+	%UpgradeItem.disabled = owned.is_empty()
 	%ChapterDetail.text += "\nНаграда: %d опыта%s" % [selected.reward_experience, " + " + selected.reward_item_id if not selected.reward_item_id.is_empty() else ""]

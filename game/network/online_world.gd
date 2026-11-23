@@ -11,6 +11,9 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @export_range(0.5, 8.0, 0.1) var gate_distance := 2.4
 @export var courtyard_name := "Тренировочный двор"
 @export var passage_name := "Каменный проход"
+@export var ash_grove_name := "Пепельная роща"
+@export var silent_ruins_name := "Безмолвные руины"
+@export var mist_bell_name := "Колокол тумана"
 @export var quest_rewards: Array[LunexQuestReward]
 @export var chapter_quest_definitions: Array[LunexChapterQuestDefinition] = []
 @export_range(1, 100000) var level_two_experience := 50
@@ -29,9 +32,13 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @onready var stone_guard: LunexTrainingEnemy = $StoneGuard
 @onready var ash_wanderer: LunexTrainingEnemy = $AshWanderer
 @onready var mist_hunter: LunexTrainingEnemy = $MistHunter
-@onready var targets: Array[LunexTrainingEnemy] = [enemy, watch, stone_guard, ash_wanderer, mist_hunter]
-@onready var gates: Array[Marker3D] = [$CourtyardGate, $Passage/ReturnGate]
-@onready var arrivals: Array[Marker3D] = [$CourtyardArrival, $Passage/Arrival]
+@onready var mist_bell_guardian: LunexGateWatch = $MistBellGuardian
+@onready var grove_wraith: LunexGateWatch = $GroveWraith
+@onready var ruin_sentinel: LunexGateWatch = $RuinSentinel
+@onready var targets: Array[LunexTrainingEnemy] = [enemy, watch, stone_guard, ash_wanderer, mist_hunter, mist_bell_guardian, grove_wraith, ruin_sentinel]
+@onready var gates: Array[Marker3D] = [$CourtyardGate, $Passage/ReturnGate, $AshGrove/Geometry/ReturnGate, $SilentRuins/Geometry/ReturnGate, $MistBell/Geometry/ReturnGate]
+@onready var back_gates: Array[Marker3D] = [$CourtyardGate, $Passage/PassageBackGate, $AshGrove/AshGroveBackGate, $SilentRuins/SilentRuinsBackGate, $MistBell/MistBellBackGate]
+@onready var arrivals: Array[Marker3D] = [$CourtyardArrival, $Passage/Arrival, $AshGrove/Geometry/Arrival, $SilentRuins/Geometry/Arrival, $MistBell/Geometry/Arrival]
 @onready var zone_hud: LunexZoneHUD = $HUD/ZoneHUD
 @onready var passage: NavigationRegion3D = $Passage
 @onready var combat: LunexCombatHUD = $HUD/CombatHUD
@@ -73,6 +80,7 @@ const ABILITY_CATALOG := {
 }
 var _profiles: Dictionary[int, String] = {}
 var _contributors: Dictionary[String, Dictionary] = {}
+var _chapter_hit_profiles: Dictionary[String, Dictionary] = {}
 var _chat_next_ms: Dictionary[int, int] = {}
 var _profile_token := ""
 var _progress: Dictionary = {}
@@ -102,6 +110,7 @@ func _ready() -> void:
 	hud_settings.pressed.connect(func() -> void: hud_editor.visible = not hud_editor.visible)
 	hud_editor.layout_changed.connect(_apply_hud_layout)
 	hud_editor.position_changed.connect(_apply_hud_positions)
+	progress_hud.upgrade_requested.connect(func(item_id: String) -> void: _upgrade_item.rpc_id(1, item_id))
 	progress_hud.chapter_equip_requested.connect(func(quest_id: String) -> void: _equip_chapter_reward.rpc_id(1, quest_id))
 	_apply_hud_layout(hud_editor.action_slider.value, hud_editor.joystick_slider.value)
 	_apply_hud_positions(hud_editor.action_offset, hud_editor.joystick_offset)
@@ -143,6 +152,9 @@ func _start_server(args: PackedStringArray) -> void:
 	watch.players = players
 	(ash_wanderer as LunexGateWatch).players = players
 	(mist_hunter as LunexGateWatch).players = players
+	mist_bell_guardian.players = players
+	grove_wraith.players = players
+	ruin_sentinel.players = players
 	for target in targets:
 		(target.get_node("State") as MultiplayerSynchronizer).public_visibility = false
 		target.hit_landed.connect(_record_hit.bind(target.target_id))
@@ -321,7 +333,7 @@ func _physics_process(delta: float) -> void:
 		return
 	combat.refresh(_local_player)
 	combat.refresh_skills(_local_player.class_id, int(_progress.get("experience", 0)), _local_player.ability_energy)
-	zone_hud.travel.visible = _local_player.health > 0 and _local_player.global_position.distance_to(gates[_local_player.zone_id].global_position) <= gate_distance
+	zone_hud.travel.visible = _local_player.health > 0 and ( _local_player.global_position.distance_to(gates[_local_player.zone_id].global_position) <= gate_distance or (_local_player.zone_id > 0 and _local_player.global_position.distance_to(back_gates[_local_player.zone_id].global_position) <= gate_distance))
 	var nearest: LunexNpcActor = null
 	for candidate in npcs.get_children():
 		var npc := candidate as LunexNpcActor
@@ -541,6 +553,18 @@ func _request_quest_route(quest_id: String) -> void:
 	var profile: String = _profiles.get(player.peer_id, "")
 	if profile.is_empty() or not _store.is_chapter_active(profile, quest_id):
 		return
+	if not definition.objective_enemy_id.is_empty():
+		for target in targets:
+			if target.target_id != definition.objective_enemy_id:
+				continue
+			if target.zone_id == player.zone_id:
+				player.set_quest_destination(target.global_position)
+				_quest_route_notice.rpc_id(player.peer_id, "Автопуть: " + target.target_name)
+			else:
+				var gate := back_gates[player.zone_id] if target.zone_id < player.zone_id else gates[player.zone_id]
+				player.set_quest_destination(gate.global_position)
+				_quest_route_notice.rpc_id(player.peer_id, "Дойди до ворот и перейди вручную.")
+			return
 	for candidate in npcs.get_children():
 		var npc := candidate as LunexNpcActor
 		if npc.npc_id != definition.objective_npc_id:
@@ -549,7 +573,8 @@ func _request_quest_route(quest_id: String) -> void:
 			player.set_quest_destination(npc.global_position)
 			_quest_route_notice.rpc_id(player.peer_id, "Автопуть: " + npc.display_name)
 		else:
-			player.set_quest_destination(gates[player.zone_id].global_position)
+			var gate := back_gates[player.zone_id] if npc.zone_id < player.zone_id else gates[player.zone_id]
+			player.set_quest_destination(gate.global_position)
 			_quest_route_notice.rpc_id(player.peer_id, "Автопуть до ворот. Переход в другую локацию вручную.")
 		return
 
@@ -585,7 +610,7 @@ func _chapter_npc_objective(peer_id: int, npc_id: String) -> void:
 	if profile.is_empty():
 		return
 	for definition in chapter_quest_definitions:
-		if definition.objective_npc_id != npc_id:
+		if not definition.objective_enemy_id.is_empty() or definition.objective_npc_id != npc_id:
 			continue
 		if not _store.is_chapter_active(profile, definition.quest_id):
 			continue
@@ -624,7 +649,7 @@ func _chapter_complete_verified(peer_id: int, quest_id: String) -> bool:
 	var profile: String = _profiles.get(peer_id, "")
 	if definition == null or profile.is_empty():
 		return false
-	if not _store.chapter_complete(profile, quest_id, definition.objective_goal, definition.reward_experience, definition.reward_item_id):
+	if not _store.chapter_complete(profile, quest_id, definition.objective_goal, definition.reward_experience, definition.reward_item_id, definition.reward_rarity, definition.reward_gold):
 		return false
 	_publish_progress(peer_id, profile)
 	return true
@@ -643,13 +668,22 @@ func _accept_quest(index: int) -> void:
 			_publish_progress(player.peer_id, profile)
 
 @rpc("any_peer", "call_remote", "reliable")
+func _upgrade_item(item_id: String) -> void:
+	var player := _sender_player()
+	if player == null or player.health <= 0 or item_id.length() > 64:
+		return
+	var profile: String = _profiles.get(player.peer_id, "")
+	if not profile.is_empty() and _store.upgrade_inventory_item(profile, item_id):
+		_publish_progress(player.peer_id, profile)
+
+@rpc("any_peer", "call_remote", "reliable")
 func _equip_chapter_reward(quest_id: String) -> void:
 	var player := _sender_player()
 	var definition := _chapter_definition(quest_id)
 	if player == null or definition == null or definition.reward_item_id.is_empty():
 		return
 	var profile: String = _profiles.get(player.peer_id, "")
-	if not profile.is_empty() and _store.equip(profile, "chapter:" + quest_id):
+	if not profile.is_empty() and _store.equip_inventory_item(profile, definition.reward_item_id) and _store.equip(profile, "chapter:" + quest_id):
 		_publish_progress(player.peer_id, profile)
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -661,6 +695,13 @@ func _equip_reward(index: int) -> void:
 			_publish_progress(player.peer_id, profile)
 
 func _record_hit(peer_id: int, target_id: String) -> void:
+	if multiplayer.is_server():
+		var chapter_profile: String = _profiles.get(peer_id, "")
+		if not chapter_profile.is_empty():
+			for chapter_def in chapter_quest_definitions:
+				if chapter_def.objective_enemy_id == target_id and _store.is_chapter_active(chapter_profile, chapter_def.quest_id):
+					var hits: Dictionary = _chapter_hit_profiles.get_or_add(target_id, {})
+					hits[chapter_profile] = true
 	var profile: String = _profiles.get(peer_id, "")
 	if profile.is_empty():
 		return
@@ -672,6 +713,18 @@ func _record_hit(peer_id: int, target_id: String) -> void:
 			earned[profile] = true
 
 func _reward_contributors(target_id: String) -> void:
+	if multiplayer.is_server():
+		var chapter_hits: Dictionary = _chapter_hit_profiles.get(target_id, {})
+		_chapter_hit_profiles.erase(target_id)
+		for chapter_def in chapter_quest_definitions:
+			if chapter_def.objective_enemy_id != target_id:
+				continue
+			for profile_id: String in chapter_hits:
+				if not _store.is_chapter_active(profile_id, chapter_def.quest_id):
+					continue
+				var online_peer: Variant = _profiles.find_key(profile_id)
+				if online_peer != null and _chapter_record_verified_objective(online_peer, chapter_def.quest_id):
+					_chapter_complete_verified(online_peer, chapter_def.quest_id)
 	for reward in quest_rewards:
 		if reward.target_id != target_id:
 			continue
@@ -745,7 +798,9 @@ func _request_travel(previous_zone: int) -> void:
 	var current := player.zone_id
 	if previous_zone != current:
 		return
-	if player.global_position.distance_to(gates[current].global_position) > gate_distance:
+	var at_forward := player.global_position.distance_to(gates[current].global_position) <= gate_distance
+	var at_back := current > 0 and player.global_position.distance_to(back_gates[current].global_position) <= gate_distance
+	if not at_forward and not at_back:
 		_travel_notice.rpc_id(player.peer_id, "Подойдите ближе к воротам.")
 		return
 	if current == 0:
@@ -754,11 +809,14 @@ func _request_travel(previous_zone: int) -> void:
 		if watch_quest.get("quest") != LunexProgressStore.Quest.COMPLETE:
 			_travel_notice.rpc_id(player.peer_id, "Сначала завершите «Дозор у ворот».")
 			return
-	var next := 1 - current
+	var next := current - 1 if at_back or current == 4 else current + 1
 	var arrival := arrivals[next].global_position
 	arrival.x += float(_spawn_slots[player.peer_id] % 4) * 0.65 - 0.975
 	player.enter_zone(next, arrival)
-	player.set_target(stone_guard if next == 1 else enemy)
+	for target in targets:
+		if target.zone_id == next:
+			player.set_target(target)
+			break
 	_arrive.rpc_id(player.peer_id, next, arrival)
 	_update_zone_visibility(player)
 
@@ -801,13 +859,18 @@ func _npc_notice(message: String) -> void:
 	zone_hud.show_notice(message)
 
 func _show_zone(zone_id: int) -> void:
-	combat.enter_zone(zone_id, 0 if zone_id == 0 else 2)
+	var first_target := 0
+	for i in range(targets.size()):
+		if targets[i].zone_id == zone_id:
+			first_target = i
+			break
+	combat.enter_zone(zone_id, first_target)
 	for target in targets:
 		target.visible = target.zone_id == zone_id
 	for npc in npcs.get_children():
 		npc.visible = npc.zone_id == zone_id
-	zone_hud.location.text = courtyard_name if zone_id == 0 else passage_name
-	zone_hud.travel.text = "Войти в проход" if zone_id == 0 else "Вернуться во двор"
+	zone_hud.location.text = [courtyard_name, passage_name, ash_grove_name, silent_ruins_name, mist_bell_name][clampi(zone_id, 0, 4)]
+	zone_hud.travel.text = "Перейти через ворота"
 	zone_hud.notice.hide()
 
 # Only client-side presentation; authoritative movement/combat remains on the server.

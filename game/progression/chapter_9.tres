@@ -6,10 +6,11 @@
 script = ExtResource("1")
 quest_id = "mist_report"
 prerequisite_id = "watcher_message"
-npc_id = "erin"
-objective_npc_id = "scout"
+npc_id = "ord"
+objective_npc_id = "keeper"
 objective_goal = 1
 title = "Следы тумана"
-objective_description = "Передай Разведчику сведения о тумане"
+objective_description = "Победи врага: Доставь весть Хранителю руин"
 
 reward_experience = 55
+objective_enemy_id = "mist_hunter"

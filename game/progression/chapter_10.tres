@@ -6,11 +6,12 @@
 script = ExtResource("1")
 quest_id = "chapter_finale"
 prerequisite_id = "mist_report"
-npc_id = "scout"
-objective_npc_id = "mara"
+npc_id = "keeper"
+objective_npc_id = "bellwarden"
 objective_goal = 1
 title = "Звон из тумана"
-objective_description = "Вернись к Маре и заверши первую главу"
+objective_description = "Дойди до Стража колокола"
 
 reward_experience = 60
 reward_item_id = "mist_bell_relic"
+reward_rarity = 3

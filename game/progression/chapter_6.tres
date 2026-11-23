@@ -10,6 +10,7 @@ npc_id = "mentor"
 objective_npc_id = "mara"
 objective_goal = 1
 title = "Пепельное предупреждение"
-objective_description = "Поговори с Марой в лагере"
+objective_description = "Победи врага: Поговори с Марой в лагере"
 
 reward_experience = 40
+objective_enemy_id = "ash_wanderer"

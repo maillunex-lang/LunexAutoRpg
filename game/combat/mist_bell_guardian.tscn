@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="PackedScene" path="res://game/combat/gate_watch.tscn" id="1"]
+[node name="MistBellGuardian" instance=ExtResource("1")]
+zone_id = 4
+target_id = "mist_bell_guardian"
+target_name = "Страж туманного колокола"
+max_health = 260
+respawn_delay = 45.0
+counter_damage = 25
+counter_radius = 3.0
+warning_duration = 1.4
+counter_cooldown = 3.5

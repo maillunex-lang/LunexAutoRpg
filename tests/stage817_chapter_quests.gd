@@ -7,8 +7,8 @@ func run() -> void:
 	root.add_child(world)
 	await process_frame
 	var definitions: Array[LunexChapterQuestDefinition] = world.chapter_quest_definitions
-	if definitions.size() != 10:
-		push_error("Expected 10 chapter quests")
+	if definitions.size() != 11:
+		push_error("Expected 10 chapter quests + boss sidequest")
 		quit(1)
 		return
 	var ids := {}
@@ -26,11 +26,11 @@ func run() -> void:
 			push_error("Broken prerequisite chain " + q.quest_id)
 			quit(1)
 			return
-		if not known_npcs.has(q.npc_id) or not known_npcs.has(q.objective_npc_id):
+		if not known_npcs.has(q.npc_id) or (q.objective_enemy_id.is_empty() and not known_npcs.has(q.objective_npc_id)):
 			push_error("Missing quest NPC " + q.quest_id)
 			quit(1)
 			return
-	print("STAGE817_QUEST_DEFINITIONS=10")
+	print("STAGE817_QUEST_DEFINITIONS=11")
 	world.queue_free()
 	var store := LunexProgressStore.new()
 	if not store.open("user://stage817_chapter_validation.sqlite"):
@@ -60,9 +60,9 @@ func run() -> void:
 			quit(1)
 			return
 	var progress: Dictionary = store.read_profile(profile).get("chapter_quests",{})
-	if progress.size() != 10:
+	if progress.size() != 11:
 		push_error("Persistence failed")
 		quit(1)
 		return
-	print("STAGE817_QUEST_PERSISTENCE=10")
+	print("STAGE817_QUEST_PERSISTENCE=11")
 	quit()

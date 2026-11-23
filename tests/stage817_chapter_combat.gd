@@ -19,7 +19,7 @@ func run() -> void:
 			quit(1)
 			return
 		checked += 1
-	if world.targets.size() != 5:
+	if world.targets.size() != 8:
 		push_error("Server target array mismatch")
 		quit(1)
 		return

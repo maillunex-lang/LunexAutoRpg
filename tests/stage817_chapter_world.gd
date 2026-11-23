@@ -11,11 +11,11 @@ func run() -> void:
 			push_error("Missing world content " + path)
 			quit(1)
 			return
-	if world.targets.size() != 5:
+	if world.targets.size() != 8:
 		push_error("Enemy targets not wired")
 		quit(1)
 		return
-	if world.npcs.get_child_count() != 5:
+	if world.npcs.get_child_count() != 8:
 		push_error("NPCs not editable scene instances")
 		quit(1)
 		return
