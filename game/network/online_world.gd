@@ -72,6 +72,7 @@ func _ready() -> void:
 	progress_hud.equip_requested.connect(func() -> void: _equip_reward.rpc_id(1, progress_hud.selected_quest))
 	chat.message_requested.connect(func(message: String) -> void: _send_chat.rpc_id(1, message))
 	zone_hud.npc_requested.connect(func(npc_id: String) -> void: _request_npc.rpc_id(1, npc_id))
+	dialogue_window.quest_accept_requested.connect(func(quest_id: String) -> void: _chapter_accept.rpc_id(1, quest_id))
 	zone_hud.travel_requested.connect(func() -> void: _request_travel.rpc_id(1, combat.zone_id))
 	screen.connect_requested.connect(_connect_client)
 	screen.disconnect_requested.connect(func() -> void: _close_client("Вы вышли из мира."))
@@ -317,6 +318,7 @@ func _reject_login(message: String) -> void:
 func _receive_progress(state: Dictionary) -> void:
 	_progress = state
 	progress_hud.show_state(state, quest_rewards, level_two_experience)
+	dialogue_window.set_quest_state(state.get("chapter_quests", {}), chapter_quest_definitions)
 
 func _chapter_definition(quest_id: String) -> LunexChapterQuestDefinition:
 	for definition in chapter_quest_definitions:
@@ -332,17 +334,35 @@ func _chapter_accept(quest_id: String) -> void:
 	var definition := _chapter_definition(quest_id)
 	if definition == null or definition.npc_id.is_empty():
 		return
-	var nearby := false
-	for candidate in npcs.get_children():
-		var npc := candidate as LunexNpcActor
-		if npc.npc_id == definition.npc_id and npc.zone_id == player.zone_id and player.global_position.distance_to(npc.global_position) <= NPC_DISTANCE:
-			nearby = true
-			break
-	if not nearby:
+	if not _npc_near_player(player, definition.npc_id):
 		return
 	var profile: String = _profiles.get(player.peer_id, "")
 	if not profile.is_empty() and _store.chapter_accept(profile, definition.quest_id, definition.prerequisite_id):
 		_publish_progress(player.peer_id, profile)
+
+# Objective events originate exclusively from validated NPC interactions.
+func _chapter_npc_objective(peer_id: int, npc_id: String) -> void:
+	if not multiplayer.is_server():
+		return
+	var profile: String = _profiles.get(peer_id, "")
+	if profile.is_empty():
+		return
+	for definition in chapter_quest_definitions:
+		if definition.objective_npc_id != npc_id:
+			continue
+		if not _store.is_chapter_active(profile, definition.quest_id):
+			continue
+		if _chapter_record_verified_objective(peer_id, definition.quest_id):
+			_chapter_complete_verified(peer_id, definition.quest_id)
+
+func _npc_near_player(player: LunexNetworkPlayer, npc_id: String) -> bool:
+	if player == null or player.health <= 0:
+		return false
+	for candidate in npcs.get_children():
+		var npc := candidate as LunexNpcActor
+		if npc.npc_id == npc_id and npc.zone_id == player.zone_id and player.global_position.distance_to(npc.global_position) <= NPC_DISTANCE:
+			return true
+	return false
 
 # Server-side only. Future NPC/objective events must call this after validation.
 func _chapter_record_verified_objective(peer_id: int, quest_id: String) -> bool:
@@ -520,6 +540,7 @@ func _request_npc(npc_id: String) -> void:
 		if npc.zone_id != player.zone_id or player.global_position.distance_to(npc.global_position) > NPC_DISTANCE:
 			_npc_notice.rpc_id(player.peer_id, "Подойдите к персонажу.")
 			return
+		_chapter_npc_objective(player.peer_id, npc.npc_id)
 		_npc_open.rpc_id(player.peer_id, npc.npc_id)
 		return
 

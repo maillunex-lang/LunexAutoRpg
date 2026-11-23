@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -31,9 +31,20 @@
 
 [ext_resource type="PackedScene" path="res://game/dialogue/dialogue_window.tscn" id="22"]
 
+[ext_resource type="Resource" path="res://game/progression/chapter_1.tres" id="23"]
+
+[ext_resource type="Resource" path="res://game/progression/chapter_2.tres" id="24"]
+
+[ext_resource type="Resource" path="res://game/progression/chapter_3.tres" id="25"]
+
+[ext_resource type="Resource" path="res://game/progression/chapter_4.tres" id="26"]
+
+[ext_resource type="Resource" path="res://game/progression/chapter_5.tres" id="27"]
+
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
 quest_rewards = Array[ExtResource("13")]([ExtResource("10"), ExtResource("14"), ExtResource("20")])
+chapter_quest_definitions = Array[Resource]([ExtResource("23"), ExtResource("24"), ExtResource("25"), ExtResource("26"), ExtResource("27")])
 
 [node name="Navigation" type="NavigationRegion3D" parent="."]
 navigation_mesh = ExtResource("8")

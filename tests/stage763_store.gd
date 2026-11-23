@@ -54,4 +54,14 @@ func _run() -> void:
     var reloaded := LunexProgressStore.new()
     if not _check(reloaded.open(args[0]) and reloaded.read_profile(a).chapter_quests.first.state == 2, "progress persists after reopening SQLite"):
         return
+    var chain := ["first_steps", "supplies", "courtyard_report", "scout_contact", "passage_report"]
+    var previous := ""
+    for quest_id in chain:
+        if not _check(reloaded.chapter_accept(b, quest_id, previous), "chain accepts " + quest_id):
+            return
+        if not _check(reloaded.chapter_advance(b, quest_id, 1, 1) and reloaded.chapter_complete(b, quest_id, 1), "chain completes " + quest_id):
+            return
+        previous = quest_id
+    if not _check(reloaded.read_profile(b).chapter_quests.size() == 5, "all five chained quests persisted"):
+        return
     quit()

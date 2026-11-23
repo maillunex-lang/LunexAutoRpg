@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="LunexChapterQuestDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/progression/chapter_quest_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = "courtyard_report"
+prerequisite_id = "supplies"
+npc_id = "mentor"
+objective_npc_id = "quartermaster"
+objective_goal = 1
+title = "Поручение Наставника"
+objective_description = "Уточни у Кладовщика состояние запасов"

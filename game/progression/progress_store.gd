@@ -114,3 +114,8 @@ func chapter_complete(profile: String, quest_id: String, goal: int) -> bool:
 		return true
 	_db.query("ROLLBACK")
 	return false
+
+func is_chapter_active(profile: String, quest_id: String) -> bool:
+	return _db.query_with_bindings(
+		"SELECT 1 FROM chapter_quests WHERE profile = ? AND quest_id = ? AND state = 1",
+		[profile, quest_id]) and not _db.query_result.is_empty()

@@ -1,17 +1,48 @@
 class_name LunexDialogueWindow
 extends Control
 
+signal quest_accept_requested(quest_id: String)
+
 @onready var speaker: Label = %Speaker
 @onready var body: RichTextLabel = %Body
 @onready var choices: VBoxContainer = %Choices
 @onready var close_button: Button = %Close
 var _resource: DialogueResource
 var _line: DialogueLine
+var _chapter_state: Dictionary = {}
+var _chapter_definitions: Array[LunexChapterQuestDefinition] = []
+var _active_npc := ""
 
 func _ready() -> void:
     close_button.pressed.connect(close_dialogue)
 
+func set_quest_state(state: Dictionary, definitions: Array[LunexChapterQuestDefinition]) -> void:
+    _chapter_state = state
+    _chapter_definitions = definitions
+    if visible:
+        _refresh_quest_actions()
+
+func _refresh_quest_actions() -> void:
+    for child in %QuestActions.get_children():
+        child.queue_free()
+    for definition in _chapter_definitions:
+        if definition.npc_id != _active_npc:
+            continue
+        if _chapter_state.has(definition.quest_id):
+            continue
+        if not definition.prerequisite_id.is_empty() and int(_chapter_state.get(definition.prerequisite_id, {}).get("state", 0)) != 2:
+            continue
+        var action := Button.new()
+        action.text = "Взять задание: " + definition.title
+        %QuestActions.add_child(action)
+        action.pressed.connect(func() -> void:
+            quest_accept_requested.emit(definition.quest_id)
+            action.disabled = true
+        )
+
 func open_dialogue(npc_id: String) -> void:
+    _active_npc = npc_id
+    _refresh_quest_actions()
     var source := LunexNpcDialogues.for_npc(npc_id)
     if source.is_empty():
         return
@@ -48,3 +79,4 @@ func close_dialogue() -> void:
     hide()
     _resource = null
     _line = null
+    _active_npc = ""

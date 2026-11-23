@@ -18,6 +18,23 @@ func _run() -> void:
         return first.dialogue_window.visible and first.dialogue_window.speaker.text == "Наставник" and not second.dialogue_window.visible
     ):
         return
+    if not await _expect("five chained quest resources loaded", func() -> bool:
+        return first.chapter_quest_definitions.size() == 5 and first.chapter_quest_definitions[4].prerequisite_id == "scout_contact"
+    ):
+        return
+    if not await _expect("mentor dialogue offers first quest", func() -> bool:
+        return first.dialogue_window.get_node("%QuestActions").get_child_count() == 1
+    ):
+        return
+    first.dialogue_window.get_node("%QuestActions").get_child(0).pressed.emit()
+    if not await _expect("server accepts first quest and syncs state", func() -> bool:
+        return first._progress.get("chapter_quests", {}).has("first_steps")
+    ):
+        return
+    if not await _expect("other profile has no first quest", func() -> bool:
+        return not second._progress.get("chapter_quests", {}).has("first_steps")
+    ):
+        return
     var dialogue = first.dialogue_window
     if not await _expect("dialogue continues to a branch with two choices", func() -> bool:
         return dialogue.choices.get_child_count() == 1
