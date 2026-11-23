@@ -83,3 +83,9 @@ Stage 1 inspected and integration worktree created. No gameplay code or running 
 - Server `_advance_quest_routes` now sets actual objective coordinates, and logical zone updates remain tied to observed server-side position. Existing quest gate checks retained.
 - Added a physical X boundary clamp for an unqualified attempt to leave the training zone (gate-watch progression). Source invariant test verifies no `enter_zone` / `_arrive` in the two travel methods; eight Godot smoke tests and headless editor import PASS.
 - **Not production accepted:** a full ENet two-peer movement test, full character-radius sweep, cross-zone combat visibility and manual Android acceptance remain outstanding. No production deploy.
+
+### Stage 3 real ENet locked-boundary test
+
+- `tests/main_world_enet_server.gd` and `tests/main_world_enet_client.gd` run in separate Godot 4.7.2 headless processes on isolated UDP 29047 and isolated SQLite `user://world_enet_29047.sqlite`.
+- Client sends real ENet movement RPCs; server observes authoritative character coordinates. Both processes PASS; server observed maximum x=21.048 (near the x=21 boundary) and zone remained 0 for a profile without completed gate-watch quest.
+- This verifies one real locked-boundary multiplayer scenario, not unlocked zone crossing, full cross-zone quest auto-navigation, or Android runtime. Stage 3 remains open until those tests pass.
