@@ -49,11 +49,23 @@ var _store := LunexProgressStore.new()
 var _ability_engine := LunexAbilityExecutor.new()
 const WARRIOR_SKILLS := ["warrior_strike", "warrior_shield"]
 const MAGE_SKILLS := ["mage_bolt", "mage_fireball"]
+const PRIEST_SKILLS := ["priest_heal", "priest_blessing"]
+const BARD_SKILLS := ["bard_song", "bard_restore"]
+const CLASS_SKILLS := {
+	"warrior": WARRIOR_SKILLS,
+	"mage": MAGE_SKILLS,
+	"priest": PRIEST_SKILLS,
+	"bard": BARD_SKILLS
+}
 const ABILITY_CATALOG := {
 	"warrior_strike": "res://game/combat/abilities/warrior_strike.tres",
 	"warrior_shield": "res://game/combat/abilities/warrior_shield.tres",
 	"mage_bolt": "res://game/combat/abilities/mage_bolt.tres",
-	"mage_fireball": "res://game/combat/abilities/mage_fireball.tres"
+	"mage_fireball": "res://game/combat/abilities/mage_fireball.tres",
+	"priest_heal": "res://game/combat/abilities/priest_heal.tres",
+	"priest_blessing": "res://game/combat/abilities/priest_blessing.tres",
+	"bard_song": "res://game/combat/abilities/bard_song.tres",
+	"bard_restore": "res://game/combat/abilities/bard_restore.tres"
 }
 var _profiles: Dictionary[int, String] = {}
 var _contributors: Dictionary[String, Dictionary] = {}
@@ -305,8 +317,6 @@ func _request_skill(ability_id: String, target_index: int) -> void:
 	var player := _sender_player()
 	if player == null or player.health <= 0 or ability_id.length() > 40:
 		return
-	if target_index < 0 or target_index >= targets.size():
-		return
 	var profile: String = _profiles.get(player.peer_id, "")
 	if profile.is_empty():
 		return
@@ -321,26 +331,63 @@ func _request_skill(ability_id: String, target_index: int) -> void:
 		return
 	var level := 2 if int(state.get("experience", 0)) >= level_two_experience else 1
 	var learned := PackedStringArray()
-	for id: String in WARRIOR_SKILLS if class_id == "warrior" else MAGE_SKILLS if class_id == "mage" else []:
+	for id: String in CLASS_SKILLS.get(class_id, []):
 		var candidate: LunexAbilityDefinition = load(ABILITY_CATALOG[id])
 		if candidate != null and candidate.unlock_level <= level:
 			learned.append(id)
-	var target: LunexTrainingEnemy = targets[target_index]
-	var target_position := player.global_position if skill.target_kind == "self" else target.global_position
-	var visible := true
+	var target: LunexTrainingEnemy = null
+	var ally: LunexNetworkPlayer = player
 	if skill.target_kind == "enemy":
-		visible = target.health > 0 and player.has_line_of_sight(target_position)
-	var result := _ability_engine.try_cast(player.peer_id, class_id, level, learned, int(player.ability_energy), ability_id, player.global_position, target_position, skill.target_kind, skill.target_kind == "self" or player.zone_id == target.zone_id, visible, Time.get_ticks_msec())
+		if target_index < 0 or target_index >= targets.size():
+			return
+		target = targets[target_index]
+	elif skill.target_kind == "ally":
+		ally = _nearest_ally(player, skill.max_range, skill.effect_kind == "heal")
+		if ally == null:
+			_skill_feedback.rpc_id(player.peer_id, "no_ally", player.ability_energy)
+			return
+	var target_position := target.global_position if target != null else ally.global_position
+	var same_zone := player.zone_id == target.zone_id if target != null else player.zone_id == ally.zone_id
+	var visible := player.has_line_of_sight(target_position) if target != null else true
+	if target != null:
+		visible = visible and target.health > 0
+	var result := _ability_engine.try_cast(player.peer_id, class_id, level, learned, int(player.ability_energy), ability_id, player.global_position, target_position, skill.target_kind, same_zone, visible, Time.get_ticks_msec())
 	if not result.get("ok", false):
 		_skill_feedback.rpc_id(player.peer_id, str(result.get("reason", "unavailable")), player.ability_energy)
 		return
 	player.ability_energy = float(result.resource_left)
-	if result.effect_kind == "damage":
+	if result.effect_kind == "damage" and target != null:
 		target.take_hit(int(result.magnitude), player.peer_id)
 		player.attack_sequence += 1
-	elif result.effect_kind == "status" and skill.target_kind == "self":
-		player.apply_shield(int(result.magnitude), float(skill.status_duration))
+	elif result.effect_kind == "heal":
+		ally.heal(int(result.magnitude))
+	elif result.effect_kind == "status":
+		if skill.status_id == "shield":
+			ally.apply_shield(int(result.magnitude), float(skill.status_duration))
+		elif skill.status_id == "blessing":
+			ally.apply_blessing(int(result.magnitude), float(skill.status_duration))
+		elif skill.status_id == "song":
+			for candidate in players.get_children():
+				var member := candidate as LunexNetworkPlayer
+				if member != null and member.health > 0 and member.zone_id == player.zone_id and member.global_position.distance_to(player.global_position) <= skill.max_range:
+					member.apply_blessing(int(result.magnitude), float(skill.status_duration))
 	_skill_feedback.rpc_id(player.peer_id, "ok:" + ability_id, player.ability_energy)
+
+# Server chooses an eligible ally, not a client-supplied peer ID.
+func _nearest_ally(caster: LunexNetworkPlayer, radius: float, injured_only: bool) -> LunexNetworkPlayer:
+	var best: LunexNetworkPlayer = null
+	var distance := INF
+	for candidate in players.get_children():
+		var ally := candidate as LunexNetworkPlayer
+		if ally == null or ally.health <= 0 or ally.zone_id != caster.zone_id:
+			continue
+		if injured_only and ally.health >= ally.max_health:
+			continue
+		var d := caster.global_position.distance_to(ally.global_position)
+		if d <= radius and d < distance:
+			best = ally
+			distance = d
+	return best
 
 @rpc("authority", "call_remote", "reliable")
 func _skill_feedback(message: String, energy: float) -> void:

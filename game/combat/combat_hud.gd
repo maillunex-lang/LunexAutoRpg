@@ -33,7 +33,7 @@ func refresh(player: LunexNetworkPlayer) -> void:
 	%Auto.text = "Стоп" if auto_active else "Авто"
 
 func refresh_skills(class_id: String, experience: int, energy: float) -> void:
-	var ids := ["warrior_strike", "warrior_shield"] if class_id == "warrior" else ["mage_bolt", "mage_fireball"] if class_id == "mage" else ["", ""]
+	var ids := ["warrior_strike", "warrior_shield"] if class_id == "warrior" else ["mage_bolt", "mage_fireball"] if class_id == "mage" else ["priest_heal", "priest_blessing"] if class_id == "priest" else ["bard_song", "bard_restore"] if class_id == "bard" else ["", ""]
 	_skill_ids = ids
 	var level := 2 if experience >= 50 else 1
 	for index in range(2):
@@ -43,7 +43,7 @@ func refresh_skills(class_id: String, experience: int, energy: float) -> void:
 			continue
 		var skill: LunexAbilityDefinition = load("res://game/combat/abilities/" + ids[index] + ".tres")
 		button.show()
-		button.text = {"warrior_strike": "Мощный удар", "warrior_shield": "Щит", "mage_bolt": "Магический снаряд", "mage_fireball": "Огненный шар"}.get(ids[index], ids[index])
+		button.text = {"warrior_strike": "Мощный удар", "warrior_shield": "Щит", "mage_bolt": "Магический снаряд", "mage_fireball": "Огненный шар", "priest_heal": "Исцеление", "priest_blessing": "Благословение", "bard_song": "Боевая песня", "bard_restore": "Восстановление"}.get(ids[index], ids[index])
 		button.disabled = skill == null or skill.unlock_level > level or energy < skill.resource_cost
 		if skill != null and skill.unlock_level > level:
 			button.text += " (ур. %d)" % skill.unlock_level

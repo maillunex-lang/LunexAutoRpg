@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="LunexAbilityDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/abilities/ability_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ability_id = "priest_heal"
+class_id = "priest"
+unlock_level = 1
+cooldown_seconds = 5.0
+resource_cost = 15
+max_range = 7.0
+target_kind = "ally"
+effect_kind = "heal"
+magnitude = 35
+status_id = ""
+status_duration = 0.0

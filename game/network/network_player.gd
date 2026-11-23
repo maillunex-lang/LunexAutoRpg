@@ -14,6 +14,8 @@ var health := 100
 var ability_energy := 100.0
 var shield_points := 0
 var shield_expires_ms := 0
+var blessing_points := 0
+var blessing_expires_ms := 0
 var revival_left := 0.0
 var _spawn_position := Vector3.ZERO
 var _was_alive := true
@@ -61,6 +63,14 @@ func has_line_of_sight(target_position: Vector3) -> bool:
 	var height := Vector3.UP * 0.5
 	var ray := PhysicsRayQueryParameters3D.create(global_position + height, target_position + height, 1)
 	return get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
+
+func heal(amount: int) -> void:
+	if health > 0:
+		health = mini(max_health, health + maxi(amount, 0))
+
+func apply_blessing(points: int, duration_seconds: float) -> void:
+	blessing_points = maxi(blessing_points, points)
+	blessing_expires_ms = Time.get_ticks_msec() + int(duration_seconds * 1000.0)
 
 func apply_shield(points: int, duration_seconds: float) -> void:
 	shield_points = maxi(shield_points, points)
@@ -158,6 +168,9 @@ func take_counter_damage(damage: int) -> void:
 		return
 	if Time.get_ticks_msec() >= shield_expires_ms:
 		shield_points = 0
+	if Time.get_ticks_msec() >= blessing_expires_ms:
+		blessing_points = 0
+	damage = maxi(0, damage - blessing_points)
 	var absorbed := mini(shield_points, damage)
 	shield_points -= absorbed
 	health = maxi(0, health - (damage - absorbed))
@@ -181,6 +194,7 @@ func _revive() -> void:
 	health = max_health
 	ability_energy = 100.0
 	shield_points = 0
+	blessing_points = 0
 
 func _ready() -> void:
 	_standing_collision_layer = collision_layer
