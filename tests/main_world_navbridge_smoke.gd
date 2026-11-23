@@ -4,7 +4,7 @@ func _initialize() -> void:
 func _run() -> void:
 	var world := (load("res://game/network/online_world.tscn") as PackedScene).instantiate()
 	root.add_child(world)
-	for i in range(12):
+	for i in range(60):
 		await physics_frame
 	var map: RID = world.get_world_3d().navigation_map
 	var passed := 0
