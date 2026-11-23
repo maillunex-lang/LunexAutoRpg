@@ -28,6 +28,10 @@ properties/5/replication_mode = 2
 properties/6/path = NodePath(".:revival_left")
 properties/6/replication_mode = 1
 
+properties/7/path = NodePath(".:server_zone_id")
+properties/7/spawn = true
+properties/7/replication_mode = 1
+
 [node name="NetworkPlayer" instance=ExtResource("1")]
 script = ExtResource("2")
 collision_layer = 2

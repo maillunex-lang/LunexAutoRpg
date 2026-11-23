@@ -4,6 +4,7 @@ extends Node3D
 signal hit_landed(peer_id: int)
 signal defeated
 
+@export var zone_id := 0
 @export var target_id := "training"
 @export var target_name := "Тренировочная цель"
 @export_range(1, 1000) var max_health := 60

@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -21,9 +21,15 @@
 [ext_resource type="Resource" path="res://game/progression/watch_reward.tres" id="14"]
 [ext_resource type="PackedScene" path="res://game/combat/gate_watch.tscn" id="15"]
 
+[ext_resource type="PackedScene" path="res://game/zones/stone_pass.tscn" id="16"]
+[ext_resource type="NavigationMesh" path="res://game/zones/passage_navigation.tres" id="17"]
+[ext_resource type="PackedScene" path="res://game/zones/zone_gate.tscn" id="18"]
+[ext_resource type="PackedScene" path="res://game/zones/zone_hud.tscn" id="19"]
+[ext_resource type="Resource" path="res://game/progression/pass_reward.tres" id="20"]
+
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
-quest_rewards = Array[ExtResource("13")]([ExtResource("10"), ExtResource("14")])
+quest_rewards = Array[ExtResource("13")]([ExtResource("10"), ExtResource("14"), ExtResource("20")])
 
 [node name="Navigation" type="NavigationRegion3D" parent="."]
 navigation_mesh = ExtResource("8")
@@ -35,6 +41,32 @@ position = Vector3(0, 0, -5.6)
 
 [node name="GateWatch" parent="." instance=ExtResource("15")]
 position = Vector3(7, 0, -5.1)
+
+[node name="CourtyardGate" parent="." instance=ExtResource("18")]
+position = Vector3(0, 0, 7.3)
+
+[node name="CourtyardArrival" type="Marker3D" parent="."]
+position = Vector3(0, 0.1, 6.2)
+
+[node name="Passage" type="NavigationRegion3D" parent="."]
+position = Vector3(42, 0, 0)
+navigation_mesh = ExtResource("17")
+
+[node name="Geometry" parent="Passage" instance=ExtResource("16")]
+
+[node name="ReturnGate" parent="Passage" instance=ExtResource("18")]
+position = Vector3(0, 0, 7.3)
+
+[node name="Arrival" type="Marker3D" parent="Passage"]
+position = Vector3(0, 0.1, 5.9)
+
+[node name="StoneGuard" parent="." instance=ExtResource("6")]
+position = Vector3(42, 0, -4.8)
+zone_id = 1
+target_id = "stone_guard"
+target_name = "Скелет-страж"
+max_health = 100
+respawn_delay = 7.0
 
 [node name="Players" type="Node3D" parent="."]
 
@@ -65,6 +97,9 @@ visible = false
 visible = false
 
 [node name="DiagnosticsHUD" parent="HUD" instance=ExtResource("12")]
+visible = false
+
+[node name="ZoneHUD" parent="HUD" instance=ExtResource("19")]
 visible = false
 
 [node name="ConnectTimeout" type="Timer" parent="."]

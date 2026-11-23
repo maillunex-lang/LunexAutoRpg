@@ -4,6 +4,7 @@ extends Control
 signal attack_requested
 signal auto_requested(enabled: bool)
 
+var zone_id := 0
 var selected := false
 var target_index := 0
 var targets: Array[LunexTrainingEnemy] = []
@@ -27,10 +28,15 @@ func refresh(player: LunexNetworkPlayer) -> void:
 	%Auto.set_pressed_no_signal(auto_active)
 	%Auto.text = "Стоп" if auto_active else "Авто"
 
+func enter_zone(next_zone: int, first_target: int) -> void:
+	zone_id = next_zone
+	target_index = first_target
+	selected = false
+
 func _cycle_target() -> void:
 	for offset in range(targets.size()):
 		var next := (target_index + offset + int(selected)) % targets.size()
-		if targets[next].health > 0:
+		if targets[next].zone_id == zone_id and targets[next].health > 0:
 			if selected and next != target_index:
 				auto_requested.emit(false)
 			target_index = next

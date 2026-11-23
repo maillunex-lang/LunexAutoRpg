@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Material" path="res://game/art/arena/masonry.tres" id="1"]
+
+[sub_resource type="BoxMesh" id="Pillar"]
+material = ExtResource("1")
+size = Vector3(0.48, 2.35, 0.60)
+
+[node name="ZoneGate" type="Marker3D"]
+
+[node name="Left" type="MeshInstance3D" parent="."]
+position = Vector3(-1.06, 1.175, 0)
+mesh = SubResource("Pillar")
+
+[node name="Right" type="MeshInstance3D" parent="."]
+position = Vector3(1.06, 1.175, 0)
+mesh = SubResource("Pillar")
+
+[node name="Lintel" type="MeshInstance3D" parent="."]
+position = Vector3(0, 2.36, 0)
+rotation_degrees = Vector3(0, 0, 90)
+mesh = SubResource("Pillar")
+
+[node name="Sign" type="Label3D" parent="."]
+position = Vector3(0, 2.85, 0)
+billboard = 1
+pixel_size = 0.007
+font_size = 36
+text = "Ворота"

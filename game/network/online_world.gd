@@ -7,6 +7,9 @@ const INPUT_INTERVAL := 0.05
 const PROFILE_PATH := "user://test_profile.cfg"
 const DEFAULT_DATABASE := "user://progress.sqlite"
 
+@export_range(0.5, 8.0, 0.1) var gate_distance := 2.4
+@export var courtyard_name := "Тренировочный двор"
+@export var passage_name := "Каменный проход"
 @export var quest_rewards: Array[LunexQuestReward]
 @export_range(1, 100000) var level_two_experience := 50
 
@@ -19,7 +22,12 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 
 @onready var enemy: LunexTrainingEnemy = $TrainingEnemy
 @onready var watch: LunexGateWatch = $GateWatch
-@onready var targets: Array[LunexTrainingEnemy] = [enemy, watch]
+@onready var stone_guard: LunexTrainingEnemy = $StoneGuard
+@onready var targets: Array[LunexTrainingEnemy] = [enemy, watch, stone_guard]
+@onready var gates: Array[Marker3D] = [$CourtyardGate, $Passage/ReturnGate]
+@onready var arrivals: Array[Marker3D] = [$CourtyardArrival, $Passage/Arrival]
+@onready var zone_hud: LunexZoneHUD = $HUD/ZoneHUD
+@onready var passage: NavigationRegion3D = $Passage
 @onready var combat: LunexCombatHUD = $HUD/CombatHUD
 
 @onready var diagnostics: LunexDiagnosticsHUD = $HUD/DiagnosticsHUD
@@ -46,6 +54,7 @@ var _spawn_slots: Dictionary[int, int] = {}
 
 func _ready() -> void:
 	combat.targets = targets
+	_show_zone(0)
 	spawner.spawn_function = _spawn_player
 	spawner.spawned.connect(_player_spawned)
 	var args := OS.get_cmdline_user_args()
@@ -58,6 +67,7 @@ func _ready() -> void:
 	progress_hud.accept_requested.connect(func() -> void: _accept_quest.rpc_id(1, progress_hud.selected_quest))
 	progress_hud.equip_requested.connect(func() -> void: _equip_reward.rpc_id(1, progress_hud.selected_quest))
 	chat.message_requested.connect(func(message: String) -> void: _send_chat.rpc_id(1, message))
+	zone_hud.travel_requested.connect(func() -> void: _request_travel.rpc_id(1, combat.zone_id))
 	screen.connect_requested.connect(_connect_client)
 	screen.disconnect_requested.connect(func() -> void: _close_client("Вы вышли из мира."))
 	multiplayer.connected_to_server.connect(func() -> void: _join.rpc_id(1, _player_name, _profile_token))
@@ -84,6 +94,7 @@ func _start_server(args: PackedStringArray) -> void:
 		return
 	watch.players = players
 	for target in targets:
+		(target.get_node("State") as MultiplayerSynchronizer).public_visibility = false
 		target.hit_landed.connect(_record_hit.bind(target.target_id))
 		target.defeated.connect(_reward_contributors.bind(target.target_id))
 	_peer = ENetMultiplayerPeer.new()
@@ -125,6 +136,8 @@ func _close_client(message: String) -> void:
 	combat.hide()
 	combat.selected = false
 	combat.target_index = 0
+	zone_hud.hide()
+	_show_zone(0)
 	chat.hide()
 	chat.reset()
 	progress_hud.hide()
@@ -170,11 +183,13 @@ func _join(value: String, token: String) -> void:
 		_spawn_slots[id] = slot
 		_profiles[id] = profile
 		var spawn := Vector3((slot % 4) * 2.0 - 3.0, 0.1, floori(slot / 4.0) * 2.0)
-		if spawner.spawn([id, spawn, player_name]) == null:
+		var player := spawner.spawn([id, spawn, player_name]) as LunexNetworkPlayer
+		if player == null:
 			_spawn_slots.erase(id)
 			_profiles.erase(id)
 			_reject_login.rpc_id(id, "Не удалось создать персонажа.")
 			return
+		_update_zone_visibility(player)
 		_receive_progress.rpc_id(id, state)
 		break
 
@@ -183,6 +198,8 @@ func _spawn_player(data: Variant) -> Node:
 	player.name = str(data[0])
 	player.prepare(data[0], data[1], data[2])
 	player.enemy = enemy
+	if multiplayer.is_server():
+		(player.get_node("State") as MultiplayerSynchronizer).public_visibility = false
 	return player
 
 func _player_spawned(node: Node) -> void:
@@ -197,6 +214,7 @@ func _player_spawned(node: Node) -> void:
 	chat.show()
 	progress_hud.show()
 	combat.show()
+	zone_hud.show()
 	connect_timeout.stop()
 	screen.show_connected()
 
@@ -214,6 +232,7 @@ func _physics_process(delta: float) -> void:
 	if not is_instance_valid(_local_player):
 		return
 	combat.refresh(_local_player)
+	zone_hud.travel.visible = _local_player.health > 0 and _local_player.global_position.distance_to(gates[_local_player.zone_id].global_position) <= gate_distance
 	_input_elapsed += delta
 	if _input_elapsed < INPUT_INTERVAL:
 		return
@@ -238,14 +257,14 @@ func _sender_player() -> LunexNetworkPlayer:
 @rpc("any_peer", "call_remote", "reliable")
 func _request_attack(index: int) -> void:
 	var player := _sender_player()
-	if player != null and player.health > 0 and index >= 0 and index < targets.size():
+	if player != null and player.health > 0 and index >= 0 and index < targets.size() and targets[index].zone_id == player.zone_id:
 		player.set_target(targets[index])
 		player.attack_requested = true
 
 @rpc("any_peer", "call_remote", "reliable")
 func _request_auto(enabled: bool, index: int) -> void:
 	var player := _sender_player()
-	if player != null and index >= 0 and index < targets.size():
+	if player != null and index >= 0 and index < targets.size() and targets[index].zone_id == player.zone_id:
 		player.set_target(targets[index])
 		player.set_auto(enabled)
 
@@ -336,12 +355,15 @@ func _send_chat(value: String) -> void:
 	if message.is_empty() or message.contains("\n") or message.contains("\r"):
 		return
 	_chat_next_ms[sender.peer_id] = now + 1000
-	for peer_id in _profiles:
-		_receive_chat.rpc_id(peer_id, sender.display_name, message)
+	for child in players.get_children():
+		var recipient := child as LunexNetworkPlayer
+		if _profiles.has(recipient.peer_id) and recipient.zone_id == sender.zone_id:
+			_receive_chat.rpc_id(recipient.peer_id, sender.display_name, message, sender.zone_id)
 
 @rpc("authority", "call_remote", "reliable", 1)
-func _receive_chat(sender: String, message: String) -> void:
-	chat.append_message(sender, message)
+func _receive_chat(sender: String, message: String, zone_id: int) -> void:
+	if combat.zone_id == zone_id:
+		chat.append_message(sender, message)
 
 
 func _sample_server(delta: float) -> void:
@@ -360,3 +382,63 @@ func _sample_server(delta: float) -> void:
 	_physics_sample_count = 0
 	_physics_total_ms = 0.0
 	_physics_max_ms = 0.0
+
+
+func _update_zone_visibility(player: LunexNetworkPlayer) -> void:
+	var state := player.get_node("State") as MultiplayerSynchronizer
+	for child in players.get_children():
+		var other := child as LunexNetworkPlayer
+		if not _profiles.has(other.peer_id):
+			continue
+		var same_zone := other.zone_id == player.zone_id
+		state.set_visibility_for(other.peer_id, same_zone)
+		if other != player:
+			(other.get_node("State") as MultiplayerSynchronizer).set_visibility_for(player.peer_id, same_zone)
+	for target in targets:
+		(target.get_node("State") as MultiplayerSynchronizer).set_visibility_for(player.peer_id, target.zone_id == player.zone_id)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_travel(previous_zone: int) -> void:
+	var player := _sender_player()
+	if player == null or player.health <= 0:
+		return
+	var current := player.zone_id
+	if previous_zone != current:
+		return
+	if player.global_position.distance_to(gates[current].global_position) > gate_distance:
+		_travel_notice.rpc_id(player.peer_id, "Подойдите ближе к воротам.")
+		return
+	if current == 0:
+		var state := _store.read_profile(_profiles[player.peer_id])
+		var watch_quest: Dictionary = state.get("quests", {}).get("gate_watch", {})
+		if watch_quest.get("quest") != LunexProgressStore.Quest.COMPLETE:
+			_travel_notice.rpc_id(player.peer_id, "Сначала завершите «Дозор у ворот».")
+			return
+	var next := 1 - current
+	var arrival := arrivals[next].global_position
+	arrival.x += float(_spawn_slots[player.peer_id] % 4) * 0.65 - 0.975
+	player.enter_zone(next, arrival)
+	player.set_target(stone_guard if next == 1 else enemy)
+	_arrive.rpc_id(player.peer_id, next, arrival)
+	_update_zone_visibility(player)
+
+@rpc("authority", "call_remote", "reliable")
+func _travel_notice(message: String) -> void:
+	zone_hud.show_notice(message)
+
+@rpc("authority", "call_remote", "reliable")
+func _arrive(next: int, arrival: Vector3) -> void:
+	if not is_instance_valid(_local_player):
+		return
+	_local_player.enter_zone(next, arrival)
+	camera.follow(_local_player)
+	chat.reset()
+	_show_zone(next)
+
+func _show_zone(zone_id: int) -> void:
+	combat.enter_zone(zone_id, 0 if zone_id == 0 else 2)
+	for target in targets:
+		target.visible = target.zone_id == zone_id
+	zone_hud.location.text = courtyard_name if zone_id == 0 else passage_name
+	zone_hud.travel.text = "Войти в проход" if zone_id == 0 else "Вернуться во двор"
+	zone_hud.notice.hide()

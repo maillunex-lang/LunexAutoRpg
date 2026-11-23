@@ -50,9 +50,11 @@ func _refresh() -> void:
 	%Quest.text = ["Доступно", reward.objective, "Завершено", "Сначала завершите предыдущее задание"][quest]
 	var level := 2 if _state.experience >= _level_two_experience else 1
 	%Experience.text = "Уровень %d · Опыт %d" % [level, _state.experience]
-	%Item.text = "Награда: %s · %d опыта" % [reward.item_name, reward.experience]
+	%Item.text = "Награда: %d опыта" % reward.experience if reward.item_id.is_empty() else "Награда: %s · %d опыта" % [reward.item_name, reward.experience]
 	var slots := PackedStringArray()
 	for definition in _rewards:
+		if definition.slot_name.is_empty():
+			continue
 		var row: Dictionary = quests.get(definition.quest_id, {})
 		var equipped_item: String = row.get("equipped", "")
 		slots.append("%s: %s" % [definition.slot_name, definition.item_name if equipped_item == definition.item_id else (equipped_item if not equipped_item.is_empty() else "пусто")])

@@ -21,10 +21,12 @@ var auto_enabled := false
 var attack_requested := false
 var attack_cooldown := 0.0
 
+var zone_id := 0
 var peer_id: int
 var display_name: String
 var desired_direction := Vector3.ZERO
 var input_time_left := 0.0
+var server_zone_id := 0
 var server_position := Vector3.ZERO
 var server_heading := 0.0
 var server_moving := false
@@ -47,6 +49,19 @@ func accept_input(direction: Vector3) -> void:
 	input_time_left = 0.4
 	if desired_direction.length_squared() > 0.001:
 		auto_enabled = false
+
+func enter_zone(next_zone: int, arrival: Vector3) -> void:
+	zone_id = next_zone
+	server_zone_id = next_zone
+	_spawn_position = arrival
+	position = arrival
+	server_position = arrival
+	velocity = Vector3.ZERO
+	desired_direction = Vector3.ZERO
+	input_time_left = 0.0
+	auto_enabled = false
+	attack_requested = false
+	server_moving = false
 
 func set_target(target: LunexTrainingEnemy) -> void:
 	if enemy != target:
@@ -152,7 +167,8 @@ func _physics_process(delta: float) -> void:
 		else:
 			hero_visual.show_defeat()
 	var weight := 1.0 - exp(-22.0 * delta)
-	position = position.lerp(server_position, weight)
+	if peer_id != multiplayer.get_unique_id() or zone_id == server_zone_id:
+		position = server_position if position.distance_squared_to(server_position) > 144.0 else position.lerp(server_position, weight)
 	$Model.rotation.y = lerp_angle($Model.rotation.y, server_heading, weight)
 	if _seen_attack != attack_sequence:
 		if _seen_attack >= 0 and alive:
