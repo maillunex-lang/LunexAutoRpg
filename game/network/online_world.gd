@@ -3,6 +3,7 @@ extends Node3D
 const PLAYER_SCENE := preload("res://game/network/network_player.tscn")
 const DEFAULT_PORT := 28740
 const MAX_PLAYERS := 16
+const NPC_DISTANCE := 2.5
 const INPUT_INTERVAL := 0.05
 const PROFILE_PATH := "user://test_profile.cfg"
 const DEFAULT_DATABASE := "user://progress.sqlite"
@@ -14,6 +15,7 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 @export_range(1, 100000) var level_two_experience := 50
 
 @onready var players: Node3D = $Players
+@onready var npcs: Node3D = $NPCs
 @onready var spawner: MultiplayerSpawner = $PlayerSpawner
 @onready var camera: LunexFollowCamera = $FollowCamera
 @onready var joystick: LunexVirtualJoystick = $HUD/VirtualJoystick
@@ -67,6 +69,7 @@ func _ready() -> void:
 	progress_hud.accept_requested.connect(func() -> void: _accept_quest.rpc_id(1, progress_hud.selected_quest))
 	progress_hud.equip_requested.connect(func() -> void: _equip_reward.rpc_id(1, progress_hud.selected_quest))
 	chat.message_requested.connect(func(message: String) -> void: _send_chat.rpc_id(1, message))
+	zone_hud.npc_requested.connect(func(npc_id: String) -> void: _request_npc.rpc_id(1, npc_id))
 	zone_hud.travel_requested.connect(func() -> void: _request_travel.rpc_id(1, combat.zone_id))
 	screen.connect_requested.connect(_connect_client)
 	screen.disconnect_requested.connect(func() -> void: _close_client("Вы вышли из мира."))
@@ -137,6 +140,7 @@ func _close_client(message: String) -> void:
 	combat.selected = false
 	combat.target_index = 0
 	zone_hud.hide()
+	zone_hud.npc_interact.hide()
 	_show_zone(0)
 	chat.hide()
 	chat.reset()
@@ -233,6 +237,18 @@ func _physics_process(delta: float) -> void:
 		return
 	combat.refresh(_local_player)
 	zone_hud.travel.visible = _local_player.health > 0 and _local_player.global_position.distance_to(gates[_local_player.zone_id].global_position) <= gate_distance
+	var nearest: LunexNpcActor = null
+	for candidate in npcs.get_children():
+		var npc := candidate as LunexNpcActor
+		if npc.zone_id != _local_player.zone_id:
+			continue
+		if _local_player.global_position.distance_to(npc.global_position) <= NPC_DISTANCE:
+			nearest = npc
+			break
+	zone_hud.npc_interact.visible = nearest != null and _local_player.health > 0
+	if nearest != null:
+		zone_hud.selected_npc_id = nearest.npc_id
+		zone_hud.npc_interact.text = "Поговорить: " + nearest.display_name
 	_input_elapsed += delta
 	if _input_elapsed < INPUT_INTERVAL:
 		return
@@ -435,10 +451,31 @@ func _arrive(next: int, arrival: Vector3) -> void:
 	chat.reset()
 	_show_zone(next)
 
+@rpc("any_peer", "call_remote", "reliable")
+func _request_npc(npc_id: String) -> void:
+	var player := _sender_player()
+	if player == null or player.health <= 0 or npc_id.length() > 32:
+		return
+	for candidate in npcs.get_children():
+		var npc := candidate as LunexNpcActor
+		if npc.npc_id != npc_id:
+			continue
+		if npc.zone_id != player.zone_id or player.global_position.distance_to(npc.global_position) > NPC_DISTANCE:
+			_npc_notice.rpc_id(player.peer_id, "Подойдите к персонажу.")
+			return
+		_npc_notice.rpc_id(player.peer_id, npc.display_name + ": Рад встрече, путник.")
+		return
+
+@rpc("authority", "call_remote", "reliable")
+func _npc_notice(message: String) -> void:
+	zone_hud.show_notice(message)
+
 func _show_zone(zone_id: int) -> void:
 	combat.enter_zone(zone_id, 0 if zone_id == 0 else 2)
 	for target in targets:
 		target.visible = target.zone_id == zone_id
+	for npc in npcs.get_children():
+		npc.visible = npc.zone_id == zone_id
 	zone_hud.location.text = courtyard_name if zone_id == 0 else passage_name
 	zone_hud.travel.text = "Войти в проход" if zone_id == 0 else "Вернуться во двор"
 	zone_hud.notice.hide()

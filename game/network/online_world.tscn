@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -26,6 +26,8 @@
 [ext_resource type="PackedScene" path="res://game/zones/zone_gate.tscn" id="18"]
 [ext_resource type="PackedScene" path="res://game/zones/zone_hud.tscn" id="19"]
 [ext_resource type="Resource" path="res://game/progression/pass_reward.tres" id="20"]
+
+[ext_resource type="PackedScene" path="res://game/npc/npc_actor.tscn" id="21"]
 
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
@@ -67,6 +69,26 @@ target_id = "stone_guard"
 target_name = "Скелет-страж"
 max_health = 100
 respawn_delay = 7.0
+
+[node name="NPCs" type="Node3D" parent="."]
+
+[node name="Mentor" parent="NPCs" instance=ExtResource("21")]
+position = Vector3(-2, 0, 1.5)
+npc_id = "mentor"
+display_name = "Наставник"
+zone_id = 0
+
+[node name="Quartermaster" parent="NPCs" instance=ExtResource("21")]
+position = Vector3(4, 0, 1.5)
+npc_id = "quartermaster"
+display_name = "Кладовщик"
+zone_id = 0
+
+[node name="Scout" parent="NPCs" instance=ExtResource("21")]
+position = Vector3(43, 0, 2.0)
+npc_id = "scout"
+display_name = "Разведчик"
+zone_id = 1
 
 [node name="Players" type="Node3D" parent="."]
 

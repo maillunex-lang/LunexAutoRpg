@@ -55,3 +55,16 @@ theme_override_constants/shadow_offset_y = 2
 unique_name_in_owner = true
 wait_time = 3.0
 one_shot = true
+
+[node name="NpcInteract" type="Button" parent="."]
+unique_name_in_owner = true
+visible = false
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -130.0
+offset_right = 130.0
+offset_top = -132.0
+offset_bottom = -88.0
+text = "Поговорить"
