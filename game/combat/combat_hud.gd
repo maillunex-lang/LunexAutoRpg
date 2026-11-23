@@ -13,24 +13,30 @@ var zone_id := 0
 var selected := false
 var target_index := 0
 var targets: Array[LunexTrainingEnemy] = []
+var _last_player: LunexNetworkPlayer
 
 func _ready() -> void:
 	%Target.pressed.connect(_cycle_target)
-	%Attack.pressed.connect(func() -> void: attack_requested.emit())
+	%Attack.pressed.connect(_attack_pressed)
 	%Auto.toggled.connect(func(enabled: bool) -> void: auto_requested.emit(enabled))
 	%SkillOne.pressed.connect(func() -> void: skill_requested.emit(_skill_ids[0]))
 	%SkillTwo.pressed.connect(func() -> void: skill_requested.emit(_skill_ids[1]))
 
 func refresh(player: LunexNetworkPlayer) -> void:
+	_last_player = player
 	var auto_active := player.auto_enabled
 	var alive := player.health > 0
 	%HeroHealth.max_value = player.max_health
 	%HeroHealth.value = player.health
 	%HeroStatus.text = "Герой: %d / %d ОЗ" % [player.health, player.max_health] if alive else "Возрождение: %d с" % ceili(player.revival_left)
+	if targets.is_empty():
+		%Attack.disabled = true
+		%Auto.disabled = true
+		return
 	var target := targets[target_index]
 	%Target.text = target.target_name if selected else "Выбрать цель"
 	%Health.text = ("%d / %d ОЗ" % [target.health, target.max_health]) if target.health > 0 else "Цель повержена"
-	%Attack.disabled = not alive or not selected or target.health <= 0
+	%Attack.disabled = not alive or not _has_living_target()
 	%Auto.disabled = (not alive or not selected or target.health <= 0) and not auto_active
 	%Auto.set_pressed_no_signal(auto_active)
 	%Auto.text = "Стоп" if auto_active else "Авто"
@@ -83,6 +89,30 @@ func enter_zone(next_zone: int, first_target: int) -> void:
 	zone_id = next_zone
 	target_index = first_target
 	selected = false
+
+func _has_living_target() -> bool:
+	for candidate in targets:
+		if candidate.zone_id == zone_id and candidate.health > 0:
+			return true
+	return false
+
+func _attack_pressed() -> void:
+	if not selected or targets[target_index].health <= 0:
+		var best := -1
+		var best_distance := INF
+		for index in range(targets.size()):
+			var candidate := targets[index]
+			if candidate.zone_id != zone_id or candidate.health <= 0:
+				continue
+			var distance := _last_player.global_position.distance_squared_to(candidate.global_position) if is_instance_valid(_last_player) else float(index)
+			if distance < best_distance:
+				best_distance = distance
+				best = index
+		if best < 0:
+			return
+		target_index = best
+		selected = true
+	attack_requested.emit()
 
 func _cycle_target() -> void:
 	for offset in range(targets.size()):
