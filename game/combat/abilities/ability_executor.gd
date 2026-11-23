@@ -14,7 +14,7 @@ func register(definition: LunexAbilityDefinition) -> bool:
 	return true
 
 func try_cast(actor_id: int, actor_class: String, actor_level: int, learned_ids: PackedStringArray, resource: int, ability_id: String, actor_position: Vector3, target_position: Vector3, target_kind: String, same_zone: bool, visible: bool, now_ms: int) -> Dictionary:
-	if actor_id < 2 or now_ms < 0 or resource < 0 or resource > 100 or not actor_position.is_finite() or not target_position.is_finite():
+	if actor_id < 2 or now_ms < 0 or not actor_position.is_finite() or not target_position.is_finite():
 		return {"ok": false, "reason": "invalid_actor"}
 	var definition: LunexAbilityDefinition = _definitions.get(ability_id)
 	if definition == null or definition.class_id != actor_class or actor_level < definition.unlock_level or not learned_ids.has(ability_id):

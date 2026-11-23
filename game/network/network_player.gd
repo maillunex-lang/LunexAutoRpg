@@ -198,9 +198,7 @@ func _revive() -> void:
 	health = max_health
 	ability_energy = 100.0
 	shield_points = 0
-	shield_expires_ms = 0
 	blessing_points = 0
-	blessing_expires_ms = 0
 
 func _ready() -> void:
 	_standing_collision_layer = collision_layer

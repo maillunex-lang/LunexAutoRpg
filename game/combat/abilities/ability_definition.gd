@@ -14,4 +14,4 @@ extends Resource
 @export_range(0.0, 120.0, 0.1) var status_duration: float = 0.0
 
 func is_valid() -> bool:
-	return not ability_id.is_empty() and class_id in ["warrior", "mage", "priest", "bard"] and unlock_level >= 1 and cooldown_seconds >= 0.0 and max_range > 0.0 and resource_cost >= 0 and magnitude >= 0 and magnitude <= 10000 and resource_cost <= 1000 and max_range <= 50.0 and cooldown_seconds <= 60.0 and status_duration <= 120.0 and target_kind in ["enemy", "self", "ally"] and effect_kind in ["damage", "heal", "status"] and (effect_kind != "status" or (not status_id.is_empty() and status_duration > 0.0))
+	return not ability_id.is_empty() and class_id in ["warrior", "mage", "priest", "bard"] and unlock_level >= 1 and cooldown_seconds >= 0.0 and max_range > 0.0 and resource_cost >= 0 and magnitude >= 0 and target_kind in ["enemy", "self", "ally"] and effect_kind in ["damage", "heal", "status"] and (effect_kind != "status" or (not status_id.is_empty() and status_duration > 0.0))

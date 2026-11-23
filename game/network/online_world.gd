@@ -316,7 +316,7 @@ func _request_attack(index: int) -> void:
 @rpc("any_peer", "call_remote", "reliable")
 func _request_skill(ability_id: String, target_index: int) -> void:
 	var player := _sender_player()
-	if player == null or player.health <= 0 or ability_id.is_empty() or ability_id.length() > 40:
+	if player == null or player.health <= 0 or ability_id.length() > 40:
 		return
 	var profile: String = _profiles.get(player.peer_id, "")
 	if profile.is_empty():
@@ -328,7 +328,7 @@ func _request_skill(ability_id: String, target_index: int) -> void:
 	if class_id != player.class_id or not ABILITY_CATALOG.has(ability_id):
 		return
 	var skill: LunexAbilityDefinition = load(ABILITY_CATALOG[ability_id])
-	if skill == null or not skill.is_valid() or skill.class_id != class_id:
+	if skill == null or skill.class_id != class_id:
 		return
 	var level := 2 if int(state.get("experience", 0)) >= level_two_experience else 1
 	var learned := PackedStringArray()
@@ -349,7 +349,7 @@ func _request_skill(ability_id: String, target_index: int) -> void:
 			return
 	var target_position := target.global_position if target != null else ally.global_position
 	var same_zone := player.zone_id == target.zone_id if target != null else player.zone_id == ally.zone_id
-	var visible := player.has_line_of_sight(target_position) if target != null else (player.has_line_of_sight(target_position) if ally != player else true)
+	var visible := player.has_line_of_sight(target_position) if target != null else true
 	if target != null:
 		visible = visible and target.health > 0
 	var result := _ability_engine.try_cast(player.peer_id, class_id, level, learned, int(player.ability_energy), ability_id, player.global_position, target_position, skill.target_kind, same_zone, visible, Time.get_ticks_msec())
