@@ -6,16 +6,18 @@
 
 [node name="VirtualJoystick" type="Control"]
 layout_mode = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
 offset_left = 24.0
-offset_top = -168.0
+offset_top = 400.0
 offset_right = 168.0
-offset_bottom = -24.0
+offset_bottom = 544.0
 mouse_filter = 2
 script = ExtResource("1")
 clampzone_size = 55.0
 use_input_actions = false
+joystick_mode = 1
+visibility_mode = 2
 
 [node name="Base" type="TextureRect" parent="."]
 layout_mode = 0
