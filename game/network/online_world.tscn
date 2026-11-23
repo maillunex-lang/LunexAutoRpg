@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://game/network/online_world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://game/training_zone.tscn" id="2"]
@@ -28,6 +28,8 @@
 [ext_resource type="Resource" path="res://game/progression/pass_reward.tres" id="20"]
 
 [ext_resource type="PackedScene" path="res://game/npc/npc_actor.tscn" id="21"]
+
+[ext_resource type="PackedScene" path="res://game/dialogue/dialogue_window.tscn" id="22"]
 
 [node name="OnlineWorld" type="Node3D"]
 script = ExtResource("1")
@@ -123,6 +125,8 @@ visible = false
 
 [node name="ZoneHUD" parent="HUD" instance=ExtResource("19")]
 visible = false
+
+[node name="DialogueWindow" parent="HUD" instance=ExtResource("22")]
 
 [node name="ConnectTimeout" type="Timer" parent="."]
 wait_time = 8.0

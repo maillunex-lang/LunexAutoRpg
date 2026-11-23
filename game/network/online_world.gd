@@ -16,6 +16,7 @@ const DEFAULT_DATABASE := "user://progress.sqlite"
 
 @onready var players: Node3D = $Players
 @onready var npcs: Node3D = $NPCs
+@onready var dialogue_window: LunexDialogueWindow = $HUD/DialogueWindow
 @onready var spawner: MultiplayerSpawner = $PlayerSpawner
 @onready var camera: LunexFollowCamera = $FollowCamera
 @onready var joystick: LunexVirtualJoystick = $HUD/VirtualJoystick
@@ -141,6 +142,7 @@ func _close_client(message: String) -> void:
 	combat.target_index = 0
 	zone_hud.hide()
 	zone_hud.npc_interact.hide()
+	dialogue_window.close_dialogue()
 	_show_zone(0)
 	chat.hide()
 	chat.reset()
@@ -463,8 +465,12 @@ func _request_npc(npc_id: String) -> void:
 		if npc.zone_id != player.zone_id or player.global_position.distance_to(npc.global_position) > NPC_DISTANCE:
 			_npc_notice.rpc_id(player.peer_id, "Подойдите к персонажу.")
 			return
-		_npc_notice.rpc_id(player.peer_id, npc.display_name + ": Рад встрече, путник.")
+		_npc_open.rpc_id(player.peer_id, npc.npc_id)
 		return
+
+@rpc("authority", "call_remote", "reliable")
+func _npc_open(npc_id: String) -> void:
+	dialogue_window.open_dialogue(npc_id)
 
 @rpc("authority", "call_remote", "reliable")
 func _npc_notice(message: String) -> void:
