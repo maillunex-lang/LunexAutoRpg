@@ -126,3 +126,6 @@
 
 2026-11-23: OWNER APPROVED GDD-08.7 PARTY-SIZE-087 B, MATCH-087 B, LEADER-087 B, SYNC-087 B, SOCIAL-087 B. See [GDD-08-07.md](GDD-08-07.md). @devbridgelunex memory recorded. GH08-027..030 only study/isolated tests, no integration.
 2026-11-23: Drafted [GDD-08-08.md](GDD-08-08.md) guilds/social progression; GUILD-088, RANK-088, ACTIVITY-088, PROGRESS-088, JOIN-088 awaiting owner approval. GH08-031 found for study, not integrated. No gameplay/deploy changes.
+
+2026-11-23: OWNER APPROVED GDD-08.8 GUILD-088 B, RANK-088 B, ACTIVITY-088 B, PROGRESS-088 B, JOIN-088 B. See [GDD-08-08.md](GDD-08-08.md). @devbridgelunex memory recorded. GH08-031 and related candidates STUDY/isolated TEST ONLY, NO integration.
+2026-11-23: Drafted [GDD-08-09.md](GDD-08-09.md) daily/weekly activities, achievements, rankings. DAILY-089/ACHIEVE-089/RANK-089/RESET-089/CATCHUP-089 awaiting owner approval. GH08-032..034 discovered, not audited/integrated. No gameplay/deployment changes.
