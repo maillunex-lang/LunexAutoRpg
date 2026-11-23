@@ -101,3 +101,5 @@
 2026-11-23: GDD-08.2 monster/AI/spawn design drafted for approval in [GDD-08-02.md](GDD-08-02.md), including GitHub candidate study GH08-003/004/006-009. AI-082, SPAWN-082, AGGRO-082, BOSS-082 are proposed, NOT approved. **No code/integration/deployment; stage 7.7.8 manual acceptance remains pending.**
 
 2026-11-23: Owner APPROVED GDD-08.2 recommendations: AI-082 A (server-side FSM), SPAWN-082 B (fixed spawn points, varied composition), AGGRO-082 B (threat/roles/healing), BOSS-082 B (two phases with telegraphed attacks). Recorded in [GDD-08-02.md](GDD-08-02.md). Candidate repositories remain STUDY/COMPAT only. Stage 7.7.8 manual Android acceptance PENDING; GDD-08 code/deployment BLOCKED.
+
+2026-11-23: [GDD-08-03.md](GDD-08-03.md) drafted for approval: chapter 1 'Звон из тумана', proposed 10 main quests, side quests, NPCs, events, quest persistence architecture, and GitHub STUDY/COMPAT candidates GH08-010..013. QUEST-083/EVENT-083/CUTSCENE-083/PARTY-083 are NOT approved. GDD-08 implementation blocked pending stage 7.7.8 manual acceptance.
