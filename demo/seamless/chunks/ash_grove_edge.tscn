@@ -1,0 +1,15 @@
+[gd_scene load_steps=4 format=3]
+[ext_resource type="Material" path="res://game/art/arena/grass.tres" id="1"]
+[sub_resource type="BoxMesh" id="BoxMesh_ground"]
+size = Vector3(24, 0.3, 24)
+[sub_resource type="BoxShape3D" id="BoxShape_ground"]
+size = Vector3(24, 0.3, 24)
+[node name="AshGroveEdge" type="Node3D"]
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_ground")
+material_override = ExtResource("1")
+[node name="Collision" type="StaticBody3D" parent="."]
+[node name="Shape" type="CollisionShape3D" parent="Collision"]
+shape = SubResource("BoxShape_ground")
+[node name="AshMarker" type="Marker3D" parent="."]
+position = Vector3(0, 0.5, -6)
